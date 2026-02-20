@@ -41,8 +41,8 @@
         
         <v-spacer></v-spacer>
 
-        <template v-if="tool === 'sign'">
-          <v-btn color="error" variant="text" @click="clearSignature" class="mr-2" prepend-icon="mdi-eraser">
+        <template v-if="tool === 'sign' || tool === 'text'">
+          <v-btn color="error" variant="text" @click="clearCurrentPage" class="mr-2" prepend-icon="mdi-eraser">
             Clear
           </v-btn>
           <v-btn color="success" variant="flat" @click="saveSignature" prepend-icon="mdi-download">
@@ -70,10 +70,30 @@
         <div class="text-layer" :class="{ 'pointer-events-none': tool !== 'text' }">
           <div v-for="text in (texts[pageNum] || [])" :key="text.id"
                class="text-element"
-               :class="{ 'pointer-events-auto': tool === 'text' }"
+               :class="{ 
+                 'pointer-events-auto': tool === 'text',
+                 'is-editing': editingTextId === text.id 
+               }"
                :style="{ left: text.x + 'px', top: text.y + 'px' }"
                @mousedown.stop="startDragText(text, $event)">
             
+            <!-- Controls (Visible on hover or when editing) -->
+            <div class="text-controls" v-if="tool === 'text'">
+               <v-icon icon="mdi-drag" 
+                       size="small" 
+                       color="primary" 
+                       class="move-handle"
+                       @mousedown.stop="startDragText(text, $event)"
+               ></v-icon>
+               
+               <v-icon icon="mdi-close-circle" 
+                       color="error" 
+                       size="small" 
+                       class="delete-btn"
+                       @click.stop="deleteText(text)"
+               ></v-icon>
+            </div>
+
             <textarea
               v-if="editingTextId === text.id"
               v-model="text.text"
@@ -90,14 +110,10 @@
                  :style="{ fontSize: (text.fontSize || 16) + 'px', color: text.color || 'black' }"
                  @dblclick.stop="editText(text)">
               {{ text.text || 'Double click to edit' }}
-              <v-icon v-if="tool === 'text'" 
-                      icon="mdi-close-circle" 
-                      color="error" 
-                      size="small" 
-                      class="delete-btn"
-                      @click.stop="deleteText(text)"
-              ></v-icon>
             </div>
+
+            <!-- Baseline Guide -->
+            <div class="baseline-guide" v-if="tool === 'text' || editingTextId === text.id"></div>
           </div>
         </div>
       </div>
@@ -283,7 +299,20 @@ const handleCanvasClick = (e) => {
 }
 
 const startDragText = (text, e) => {
-  if (tool.value !== 'text' || editingTextId.value) return
+  if (tool.value !== 'text') return
+  
+  // If we are editing THIS text, only allow drag if we clicked the handle (or not the textarea)
+  if (editingTextId.value === text.id) {
+     if (e.target.tagName.toLowerCase() === 'textarea') {
+         return 
+     }
+  }
+  
+  // If editing another text, close it first
+  if (editingTextId.value && editingTextId.value !== text.id) {
+      const oldText = texts.value[pageNum.value].find(t => t.id === editingTextId.value)
+      if (oldText) finishEditing(oldText)
+  }
   
   draggingTextId.value = text.id
   const rect = canvasWrapper.value.getBoundingClientRect()
@@ -301,8 +330,18 @@ const handleWindowMouseMove = (e) => {
     const rect = canvasWrapper.value.getBoundingClientRect()
     const text = texts.value[pageNum.value].find(t => t.id === draggingTextId.value)
     if (text) {
-        text.x = e.clientX - rect.left - dragOffset.value.x
-        text.y = e.clientY - rect.top - dragOffset.value.y
+        let newX = e.clientX - rect.left - dragOffset.value.x
+        let newY = e.clientY - rect.top - dragOffset.value.y
+        
+        // Optional: Constrain to canvas bounds
+        const viewport = viewportSize.value
+        if (newX < 0) newX = 0
+        if (newY < 0) newY = 0
+        if (viewport.width && newX > viewport.width - 50) newX = viewport.width - 50
+        if (viewport.height && newY > viewport.height - 20) newY = viewport.height - 20
+        
+        text.x = newX
+        text.y = newY
     }
   }
 }
@@ -331,6 +370,16 @@ const editText = (text) => {
 const deleteText = (text) => {
   const idx = texts.value[pageNum.value].indexOf(text)
   if (idx > -1) texts.value[pageNum.value].splice(idx, 1)
+}
+
+const clearCurrentPage = () => {
+  if (tool.value === 'sign') {
+    clearSignature()
+  } else if (tool.value === 'text') {
+    if (texts.value[pageNum.value]) {
+      texts.value[pageNum.value] = []
+    }
+  }
 }
 
 const clearSignature = () => {
@@ -373,10 +422,31 @@ const saveSignature = async () => {
       if (pageTexts && pageTexts.length > 0) {
         for (const t of pageTexts) {
             const textSize = t.fontSize / scale.value
-            const x = t.x / scale.value
+            // Adjust X: Add padding (4px)
+            const x = (t.x + 4) / scale.value
+            
+            // Adjust Y: 
             // PDF Y is bottom-up. HTML Y is top-down.
-            // Subtracting textSize helps align baseline approximately
-            const y = height - (t.y / scale.value) - (textSize * 0.8) 
+            // t.y is the top of the .text-element
+            // Text starts at t.y + 4 (padding)
+            // pdf-lib drawText Y is the baseline
+            // StandardFonts.Helvetica baseline is approx 0.2 * size from bottom of em-box?
+            // Actually, pdf-lib docs say:
+            // "The y coordinate is the y-coordinate of the baseline of the text."
+            
+            // In HTML (top-left origin):
+            // Top of text: t.y + 4
+            // Baseline is roughly: t.y + 4 + (fontSize * 0.8) (approximation)
+            // Bottom of text element: t.y + 4 + fontSize + 4
+            
+            // Let's try to map the top of the text visually to the PDF.
+            // y_pdf_top = height - ((t.y + 4) / scale.value)
+            // y_pdf_baseline = y_pdf_top - (textSize * 0.85) // Tuned offset
+            
+            // Let's try to use the bottom of the element as a reference if the user aligns the bottom?
+            // User likely aligns the text itself.
+            
+            const y = height - ((t.y + 4) / scale.value) - (textSize * 0.75) 
             
             page.drawText(t.text, {
                 x: x,
@@ -451,6 +521,7 @@ const downloadBlob = (data, fileName, mimeType) => {
   padding: 4px;
   border: 1px dashed transparent;
   min-width: 50px;
+  line-height: 1; /* Match PDF rendering closer */
 }
 
 .text-element:hover {
@@ -467,6 +538,7 @@ const downloadBlob = (data, fileName, mimeType) => {
   min-width: 100px;
   width: auto;
   height: auto;
+  line-height: 1;
 }
 
 .text-content {
@@ -474,14 +546,45 @@ const downloadBlob = (data, fileName, mimeType) => {
   white-space: pre-wrap;
   position: relative;
   user-select: none;
+  line-height: 1;
+}
+
+.text-controls {
+  position: absolute;
+  top: -24px;
+  right: 0;
+  display: none; /* Hidden by default */
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  padding: 2px;
+  z-index: 30;
+}
+
+.text-element:hover .text-controls,
+.text-element.is-editing .text-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.move-handle {
+  cursor: grab;
+}
+
+.move-handle:active {
+  cursor: grabbing;
 }
 
 .delete-btn {
-  position: absolute;
-  top: -12px;
-  right: -12px;
   cursor: pointer;
-  z-index: 30;
+}
+
+.baseline-guide {
+  position: absolute;
+  bottom: 4px; /* Matches padding-bottom */
+  left: 0;
+  width: 100%;
+  border-bottom: 1px dashed rgba(255, 0, 0, 0.5);
+  pointer-events: none;
 }
 
 .pointer-events-auto {
