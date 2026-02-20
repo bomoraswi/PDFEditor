@@ -37,11 +37,15 @@
             <v-icon start>mdi-format-text</v-icon>
             Text
           </v-btn>
+          <v-btn value="whiteout" size="small">
+            <v-icon start>mdi-eraser-variant</v-icon>
+            Erase
+          </v-btn>
         </v-btn-toggle>
         
         <v-spacer></v-spacer>
 
-        <template v-if="tool === 'sign' || tool === 'text'">
+        <template v-if="tool === 'sign' || tool === 'text' || tool === 'whiteout'">
           <v-btn color="error" variant="text" @click="clearCurrentPage" class="mr-2" prepend-icon="mdi-eraser">
             Clear
           </v-btn>
@@ -54,6 +58,7 @@
       <!-- Canvas Container -->
       <div class="canvas-wrapper elevation-4 bg-white" ref="canvasWrapper"
            @click="handleCanvasClick"
+           @mousedown="handleCanvasMouseDown"
       >
         <canvas ref="pdfCanvas" class="pdf-canvas"></canvas>
         <canvas 
@@ -66,6 +71,37 @@
           @mouseleave="stopDrawing"
         ></canvas>
         
+        <!-- Whiteout Layer -->
+        <div class="whiteout-layer" :class="{ 'pointer-events-none': tool !== 'whiteout' }">
+           <div v-for="w in (whiteouts[pageNum] || [])" :key="w.id"
+                class="whiteout-element"
+                :style="{ 
+                  left: w.x + 'px', 
+                  top: w.y + 'px', 
+                  width: w.width + 'px', 
+                  height: w.height + 'px' 
+                }">
+             <v-icon v-if="tool === 'whiteout'" 
+                     icon="mdi-close-circle" 
+                     color="error" 
+                     size="x-small" 
+                     class="delete-btn-whiteout"
+                     @click.stop="deleteWhiteout(w)"
+             ></v-icon>
+           </div>
+           
+           <!-- Current drawing whiteout -->
+           <div v-if="isDrawingWhiteout"
+                class="whiteout-element drawing"
+                :style="{
+                  left: currentWhiteout.x + 'px',
+                  top: currentWhiteout.y + 'px',
+                  width: currentWhiteout.width + 'px',
+                  height: currentWhiteout.height + 'px'
+                }">
+           </div>
+        </div>
+
         <!-- Text Layer -->
         <div class="text-layer" :class="{ 'pointer-events-none': tool !== 'text' }">
           <div v-for="text in (texts[pageNum] || [])" :key="text.id"
@@ -79,10 +115,45 @@
             
             <!-- Controls (Visible on hover or when editing) -->
             <div class="text-controls" v-if="tool === 'text'">
+               <!-- Formatting Tools -->
+               <template v-if="editingTextId === text.id">
+                   <v-btn size="x-small" variant="text" icon @click.stop="toggleBold(text)" :color="text.isBold ? 'primary' : 'grey-darken-1'">
+                     <v-icon>mdi-format-bold</v-icon>
+                   </v-btn>
+                   <v-btn size="x-small" variant="text" icon @click.stop="toggleItalic(text)" :color="text.isItalic ? 'primary' : 'grey-darken-1'">
+                     <v-icon>mdi-format-italic</v-icon>
+                   </v-btn>
+                   <v-menu>
+                     <template v-slot:activator="{ props }">
+                        <v-btn size="x-small" variant="text" icon v-bind="props">
+                          <v-icon>mdi-format-size</v-icon>
+                        </v-btn>
+                     </template>
+                     <v-list density="compact">
+                       <v-list-item v-for="size in [12, 14, 16, 18, 20, 24, 30]" :key="size" @click="text.fontSize = size" :value="size">
+                         <v-list-item-title>{{ size }}</v-list-item-title>
+                       </v-list-item>
+                     </v-list>
+                   </v-menu>
+                   <v-menu>
+                     <template v-slot:activator="{ props }">
+                        <v-btn size="x-small" variant="text" icon v-bind="props">
+                          <v-icon>mdi-format-font</v-icon>
+                        </v-btn>
+                     </template>
+                     <v-list density="compact">
+                       <v-list-item v-for="font in ['Helvetica', 'Times Roman', 'Courier']" :key="font" @click="text.fontFamily = font" :value="font">
+                         <v-list-item-title>{{ font }}</v-list-item-title>
+                       </v-list-item>
+                     </v-list>
+                   </v-menu>
+                   <v-divider vertical class="mx-1"></v-divider>
+               </template>
+
                <v-icon icon="mdi-drag" 
                        size="small" 
                        color="primary" 
-                       class="move-handle"
+                       class="move-handle mx-1"
                        @mousedown.stop="startDragText(text, $event)"
                ></v-icon>
                
@@ -101,13 +172,25 @@
               @click.stop
               class="text-input"
               autofocus
-              :style="{ fontSize: (text.fontSize || 16) + 'px', color: text.color || 'black' }"
+              :style="{ 
+                fontSize: (text.fontSize || 16) + 'px', 
+                color: text.color || 'black',
+                fontWeight: text.isBold ? 'bold' : 'normal',
+                fontStyle: text.isItalic ? 'italic' : 'normal',
+                fontFamily: getCssFontFamily(text.fontFamily)
+              }"
               ref="textInputs"
             ></textarea>
             
             <div v-else 
                  class="text-content" 
-                 :style="{ fontSize: (text.fontSize || 16) + 'px', color: text.color || 'black' }"
+                 :style="{ 
+                    fontSize: (text.fontSize || 16) + 'px', 
+                    color: text.color || 'black',
+                    fontWeight: text.isBold ? 'bold' : 'normal',
+                    fontStyle: text.isItalic ? 'italic' : 'normal',
+                    fontFamily: getCssFontFamily(text.fontFamily)
+                 }"
                  @dblclick.stop="editText(text)">
               {{ text.text || 'Double click to edit' }}
             </div>
@@ -147,12 +230,16 @@ const canvasWrapper = ref(null)
 const tool = ref('view')
 const signatures = ref({}) // Store signatures per page: { pageNum: dataUrl }
 const texts = ref({}) // Store texts per page: { pageNum: [{ id, x, y, text, fontSize, color }] }
+const whiteouts = ref({}) // Store whiteouts per page: { pageNum: [{ id, x, y, width, height }] }
 const viewportSize = ref({ width: 0, height: 0 })
 const editingTextId = ref(null)
 const draggingTextId = ref(null)
 const dragOffset = ref({ x: 0, y: 0 })
 
 const isDrawing = ref(false)
+const isDrawingWhiteout = ref(false)
+const currentWhiteout = ref({ x: 0, y: 0, width: 0, height: 0 })
+const whiteoutStart = ref({ x: 0, y: 0 })
 const lastX = ref(0)
 const lastY = ref(0)
 
@@ -271,12 +358,30 @@ const stopDrawing = () => {
   isDrawing.value = false
 }
 
+const handleCanvasMouseDown = (e) => {
+  if (tool.value === 'whiteout') {
+      const rect = canvasWrapper.value.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      isDrawingWhiteout.value = true
+      whiteoutStart.value = { x, y }
+      currentWhiteout.value = { x, y, width: 0, height: 0 }
+      
+      window.addEventListener('mousemove', handleWindowMouseMove)
+      window.addEventListener('mouseup', handleWindowMouseUp)
+  }
+}
+
 const handleCanvasClick = (e) => {
-  if (tool.value !== 'text' || draggingTextId.value || editingTextId.value) return
+  if (tool.value === 'whiteout') return // Handled by mousedown/up
+  if (draggingTextId.value || editingTextId.value) return
 
   const rect = canvasWrapper.value.getBoundingClientRect()
   const x = e.clientX - rect.left
   const y = e.clientY - rect.top
+
+  if (tool.value !== 'text') return
   
   // Create new text
   const newText = {
@@ -285,7 +390,10 @@ const handleCanvasClick = (e) => {
     y: y,
     text: '',
     fontSize: 16,
-    color: '#000000'
+    color: '#000000',
+    fontFamily: 'Helvetica',
+    isBold: false,
+    isItalic: false
   }
   
   if (!texts.value[pageNum.value]) {
@@ -343,11 +451,40 @@ const handleWindowMouseMove = (e) => {
         text.x = newX
         text.y = newY
     }
+  } else if (isDrawingWhiteout.value) {
+    const rect = canvasWrapper.value.getBoundingClientRect()
+    const currentX = e.clientX - rect.left
+    const currentY = e.clientY - rect.top
+    
+    const width = currentX - whiteoutStart.value.x
+    const height = currentY - whiteoutStart.value.y
+    
+    currentWhiteout.value = {
+        x: width > 0 ? whiteoutStart.value.x : currentX,
+        y: height > 0 ? whiteoutStart.value.y : currentY,
+        width: Math.abs(width),
+        height: Math.abs(height)
+    }
   }
 }
 
 const handleWindowMouseUp = () => {
-  draggingTextId.value = null
+  if (draggingTextId.value) {
+    draggingTextId.value = null
+  } else if (isDrawingWhiteout.value) {
+      isDrawingWhiteout.value = false
+      if (currentWhiteout.value.width > 5 && currentWhiteout.value.height > 5) {
+          if (!whiteouts.value[pageNum.value]) {
+              whiteouts.value[pageNum.value] = []
+          }
+          whiteouts.value[pageNum.value].push({
+              id: Date.now(),
+              ...currentWhiteout.value
+          })
+      }
+      currentWhiteout.value = { x: 0, y: 0, width: 0, height: 0 }
+  }
+  
   window.removeEventListener('mousemove', handleWindowMouseMove)
   window.removeEventListener('mouseup', handleWindowMouseUp)
 }
@@ -372,12 +509,38 @@ const deleteText = (text) => {
   if (idx > -1) texts.value[pageNum.value].splice(idx, 1)
 }
 
+const deleteWhiteout = (w) => {
+  const idx = whiteouts.value[pageNum.value].indexOf(w)
+  if (idx > -1) whiteouts.value[pageNum.value].splice(idx, 1)
+}
+
+const toggleBold = (text) => {
+  text.isBold = !text.isBold
+}
+
+const toggleItalic = (text) => {
+  text.isItalic = !text.isItalic
+}
+
+const getCssFontFamily = (pdfFontFamily) => {
+  switch (pdfFontFamily) {
+    case 'Times Roman': return '"Times New Roman", Times, serif'
+    case 'Courier': return '"Courier New", Courier, monospace'
+    case 'Helvetica': 
+    default: return 'Helvetica, Arial, sans-serif'
+  }
+}
+
 const clearCurrentPage = () => {
   if (tool.value === 'sign') {
     clearSignature()
   } else if (tool.value === 'text') {
     if (texts.value[pageNum.value]) {
       texts.value[pageNum.value] = []
+    }
+  } else if (tool.value === 'whiteout') {
+    if (whiteouts.value[pageNum.value]) {
+      whiteouts.value[pageNum.value] = []
     }
   }
 }
@@ -397,13 +560,68 @@ const saveSignature = async () => {
     const arrayBuffer = await file.value.arrayBuffer()
     const pdfDoc = await PDFDocument.load(arrayBuffer)
     const pages = pdfDoc.getPages()
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    
+    // Embed Standard Fonts
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+    const helveticaObliqueFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique)
+    const helveticaBoldObliqueFont = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique)
+    
+    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
+    const timesRomanBoldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold)
+    const timesRomanItalicFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic)
+    const timesRomanBoldItalicFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBoldItalic)
+    
+    const courierFont = await pdfDoc.embedFont(StandardFonts.Courier)
+    const courierBoldFont = await pdfDoc.embedFont(StandardFonts.CourierBold)
+    const courierObliqueFont = await pdfDoc.embedFont(StandardFonts.CourierOblique)
+    const courierBoldObliqueFont = await pdfDoc.embedFont(StandardFonts.CourierBoldOblique)
+
+    const getFont = (family, isBold, isItalic) => {
+      if (family === 'Times Roman') {
+        if (isBold && isItalic) return timesRomanBoldItalicFont
+        if (isBold) return timesRomanBoldFont
+        if (isItalic) return timesRomanItalicFont
+        return timesRomanFont
+      } else if (family === 'Courier') {
+        if (isBold && isItalic) return courierBoldObliqueFont
+        if (isBold) return courierBoldFont
+        if (isItalic) return courierObliqueFont
+        return courierFont
+      } else {
+        // Helvetica (Default)
+        if (isBold && isItalic) return helveticaBoldObliqueFont
+        if (isBold) return helveticaBoldFont
+        if (isItalic) return helveticaObliqueFont
+        return helveticaFont
+      }
+    }
     
     // Iterate through all pages
     for (let i = 0; i < pages.length; i++) {
       const pNum = i + 1
       const page = pages[i]
       const { width, height } = page.getSize()
+
+      // 0. Embed Whiteouts (First, to be under text)
+      const pageWhiteouts = whiteouts.value[pNum]
+      if (pageWhiteouts && pageWhiteouts.length > 0) {
+        for (const w of pageWhiteouts) {
+             const x = w.x / scale.value
+             // PDF Y is bottom-up
+             const y = height - (w.y / scale.value) - (w.height / scale.value)
+             
+             page.drawRectangle({
+                 x: x,
+                 y: y,
+                 width: w.width / scale.value,
+                 height: w.height / scale.value,
+                 color: rgb(1, 1, 1), // White
+                 borderColor: undefined,
+                 borderWidth: 0,
+             })
+        }
+      }
 
       // 1. Embed Signatures
       const signatureDataUrl = signatures.value[pNum]
@@ -425,28 +643,12 @@ const saveSignature = async () => {
             // Adjust X: Add padding (4px)
             const x = (t.x + 4) / scale.value
             
-            // Adjust Y: 
-            // PDF Y is bottom-up. HTML Y is top-down.
-            // t.y is the top of the .text-element
-            // Text starts at t.y + 4 (padding)
-            // pdf-lib drawText Y is the baseline
-            // StandardFonts.Helvetica baseline is approx 0.2 * size from bottom of em-box?
-            // Actually, pdf-lib docs say:
-            // "The y coordinate is the y-coordinate of the baseline of the text."
-            
-            // In HTML (top-left origin):
-            // Top of text: t.y + 4
-            // Baseline is roughly: t.y + 4 + (fontSize * 0.8) (approximation)
-            // Bottom of text element: t.y + 4 + fontSize + 4
-            
-            // Let's try to map the top of the text visually to the PDF.
-            // y_pdf_top = height - ((t.y + 4) / scale.value)
-            // y_pdf_baseline = y_pdf_top - (textSize * 0.85) // Tuned offset
-            
-            // Let's try to use the bottom of the element as a reference if the user aligns the bottom?
-            // User likely aligns the text itself.
-            
             const y = height - ((t.y + 4) / scale.value) - (textSize * 0.75) 
+            
+            const font = getFont(t.fontFamily, t.isBold, t.isItalic)
+            
+            // Draw background if needed (optional future feature)
+            // if (t.backgroundColor) ...
             
             page.drawText(t.text, {
                 x: x,
@@ -588,6 +790,44 @@ const downloadBlob = (data, fileName, mimeType) => {
 }
 
 .pointer-events-auto {
-  pointer-events: auto;
-}
+    pointer-events: auto;
+  }
+
+  .whiteout-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 15; /* Below text layer (20), above canvas */
+  }
+
+  .whiteout-element {
+    position: absolute;
+    background-color: white;
+    /* border: 1px dashed #ccc; Optional: Show border only when editing? */
+  }
+  
+  .whiteout-element.drawing {
+    border: 1px dashed #1976D2;
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .whiteout-element:hover {
+    border: 1px dashed #ccc;
+  }
+
+  .delete-btn-whiteout {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    display: none;
+  }
+
+  .whiteout-element:hover .delete-btn-whiteout {
+    display: block;
+  }
 </style>
