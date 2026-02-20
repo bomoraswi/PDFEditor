@@ -34,6 +34,7 @@
       <v-container class="d-flex align-center fill-height">
         <!-- Logo -->
         <div class="d-flex align-center cursor-pointer logo-container" @click="$router.push('/')">
+          <img src="@/assets/logo.png" alt="PDF Editor" height="40" class="mr-3"/>
           <span class="font-weight-black text-h5">PDF <span class="text-primary">Editor</span></span>
         </div>
 

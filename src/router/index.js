@@ -24,6 +24,16 @@ const routes = [
     path: '/pricing',
     name: 'pricing',
     component: () => import('../views/PricingView.vue')
+  },
+  {
+    path: '/editor',
+    name: 'editor',
+    component: () => import('../views/EditorView.vue')
+  },
+  {
+    path: '/options',
+    name: 'options',
+    component: () => import('../views/OptionsView.vue')
   }
 ]
 

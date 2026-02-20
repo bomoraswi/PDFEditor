@@ -54,7 +54,7 @@
         ref="fileInput"
         class="d-none"
         @change="handleFileUpload"
-        accept=".pdf,.doc,.docx,.rtf,.ppt,.pptx,.jpeg,.png,.jfif,.xls,.xlsx,.txt"
+        accept=".pdf"
       />
     </v-card>
 
@@ -63,42 +63,68 @@
       v-else
       flat
       border
-      class="w-100 pa-6 d-flex align-center"
+      class="w-100 pa-6"
       max-width="600"
     >
-      <v-avatar color="primary-lighten-5" size="56" class="mr-4">
-        <v-icon icon="mdi-file-document-outline" color="primary" size="32"></v-icon>
-      </v-avatar>
-      
-      <div class="flex-grow-1 overflow-hidden">
-        <div class="text-h6 text-truncate">{{ selectedFile.name }}</div>
-        <div class="text-body-2 text-grey">
-          {{ formatFileSize(selectedFile.size) }}
+      <div class="d-flex align-center">
+        <v-avatar color="primary-lighten-5" size="56" class="mr-4">
+          <v-icon icon="mdi-file-pdf-box" color="error" size="32"></v-icon>
+        </v-avatar>
+        
+        <div class="flex-grow-1 overflow-hidden">
+          <div class="text-h6 text-truncate">{{ selectedFile.name }}</div>
+          <div class="text-body-2 text-grey">
+            {{ formatFileSize(selectedFile.size) }}
+          </div>
         </div>
+
+        <v-tooltip text="Remove file" location="top">
+          <template v-slot:activator="{ props }">
+            <v-btn
+              v-bind="props"
+              icon="mdi-close"
+              variant="text"
+              color="grey-darken-1"
+              @click="removeFile"
+              class="ml-2"
+              :disabled="isConverting"
+            ></v-btn>
+          </template>
+        </v-tooltip>
       </div>
 
-      <v-tooltip text="Remove file" location="top">
-        <template v-slot:activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon="mdi-close"
-            variant="text"
-            color="grey-darken-1"
-            @click="removeFile"
-            class="ml-2"
-          ></v-btn>
-        </template>
-      </v-tooltip>
+      <!-- Conversion Progress -->
+      <div v-if="isConverting" class="mt-6">
+        <div class="d-flex justify-space-between mb-2">
+          <span class="text-body-2 font-weight-medium">Converting to Word...</span>
+          <span class="text-body-2 text-primary">{{ conversionProgress }}%</span>
+        </div>
+        <v-progress-linear
+          v-model="conversionProgress"
+          color="primary"
+          height="8"
+          rounded
+          striped
+        ></v-progress-linear>
+      </div>
     </v-card>
-
   </v-container>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
+
+const store = useStore()
+const router = useRouter()
 
 const fileInput = ref(null)
 const selectedFile = ref(null)
+const isConverting = ref(false)
+const conversionProgress = ref(0)
+const conversionComplete = ref(false)
+const convertedPages = ref([])
 
 const triggerFileInput = () => {
   fileInput.value.click()
@@ -109,7 +135,6 @@ const handleFileUpload = (event) => {
   if (file) {
     processFile(file)
   }
-  // Reset input so same file can be selected again if needed
   event.target.value = ''
 }
 
@@ -121,12 +146,23 @@ const handleDrop = (event) => {
 }
 
 const processFile = (file) => {
-  console.log('File selected:', file.name)
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    alert('Please select a PDF file')
+    return
+  }
   selectedFile.value = file
+  
+  // Save to store and redirect
+  store.dispatch('setFile', file)
+  router.push('/options')
 }
 
 const removeFile = () => {
   selectedFile.value = null
+  isConverting.value = false
+  conversionProgress.value = 0
+  conversionComplete.value = false
+  convertedPages.value = []
 }
 
 const formatFileSize = (bytes) => {
