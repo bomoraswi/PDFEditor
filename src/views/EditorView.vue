@@ -41,11 +41,42 @@
             <v-icon start>mdi-eraser-variant</v-icon>
             Erase
           </v-btn>
+          <v-menu location="bottom">
+            <template v-slot:activator="{ props }">
+               <v-btn value="shape" size="small" v-bind="props">
+                 <v-icon start>mdi-shape</v-icon>
+                 Shapes
+                 <v-icon end size="small">mdi-chevron-down</v-icon>
+               </v-btn>
+            </template>
+            <v-list density="compact">
+               <v-list-item @click="setShapeTool('checkbox')" :active="shapeType === 'checkbox'">
+                  <template v-slot:prepend><v-icon>mdi-checkbox-blank-outline</v-icon></template>
+                  <v-list-item-title>Checkbox</v-list-item-title>
+               </v-list-item>
+               <v-list-item @click="setShapeTool('radio')" :active="shapeType === 'radio'">
+                  <template v-slot:prepend><v-icon>mdi-radiobox-blank</v-icon></template>
+                  <v-list-item-title>Radio Button</v-list-item-title>
+               </v-list-item>
+               <v-list-item @click="setShapeTool('check')" :active="shapeType === 'check'">
+                  <template v-slot:prepend><v-icon>mdi-check</v-icon></template>
+                  <v-list-item-title>Check Mark</v-list-item-title>
+               </v-list-item>
+               <v-list-item @click="setShapeTool('cross')" :active="shapeType === 'cross'">
+                  <template v-slot:prepend><v-icon>mdi-close</v-icon></template>
+                  <v-list-item-title>Cross (X)</v-list-item-title>
+               </v-list-item>
+               <v-list-item @click="setShapeTool('circle')" :active="shapeType === 'circle'">
+                  <template v-slot:prepend><v-icon>mdi-circle</v-icon></template>
+                  <v-list-item-title>Black Circle</v-list-item-title>
+               </v-list-item>
+            </v-list>
+          </v-menu>
         </v-btn-toggle>
         
         <v-spacer></v-spacer>
 
-        <template v-if="tool === 'sign' || tool === 'text' || tool === 'whiteout'">
+        <template v-if="tool === 'sign' || tool === 'text' || tool === 'whiteout' || tool === 'shape'">
           <v-btn color="error" variant="text" @click="clearCurrentPage" class="mr-2" prepend-icon="mdi-eraser">
             Clear
           </v-btn>
@@ -100,6 +131,50 @@
                   height: currentWhiteout.height + 'px'
                 }">
            </div>
+        </div>
+
+        <!-- Shapes Layer -->
+        <div class="shape-layer" :class="{ 'pointer-events-none': tool !== 'shape' }">
+          <div v-for="shape in (shapes[pageNum] || [])" :key="shape.id"
+               class="shape-element"
+               :class="{ 'is-selected': selectedShapeId === shape.id }"
+               :style="{ left: shape.x + 'px', top: shape.y + 'px', width: shape.width + 'px', height: shape.height + 'px' }"
+               @mousedown.stop="startDragShape(shape, $event)"
+               @click.stop="selectShape(shape)">
+            
+            <div class="shape-content" style="width: 100%; height: 100%;">
+               <!-- Checkbox -->
+               <div v-if="shape.type === 'checkbox'" 
+                    style="width: 100%; height: 100%; border: 2px solid black; background: transparent;"></div>
+               
+               <!-- Radio Button -->
+               <div v-else-if="shape.type === 'radio'" 
+                    style="width: 100%; height: 100%; border: 2px solid black; border-radius: 50%; background: transparent;"></div>
+               
+               <!-- Black Circle -->
+               <div v-else-if="shape.type === 'circle'" 
+                    style="width: 100%; height: 100%; border-radius: 50%; background: black;"></div>
+               
+               <!-- Check Mark -->
+               <v-icon v-else-if="shape.type === 'check'" icon="mdi-check" color="black" style="width: 100%; height: 100%; font-size: 100%;"></v-icon>
+               
+               <!-- Cross (X) -->
+               <v-icon v-else-if="shape.type === 'cross'" icon="mdi-close" color="black" style="width: 100%; height: 100%; font-size: 100%;"></v-icon>
+            </div>
+
+            <!-- Resize Handle -->
+            <div v-if="selectedShapeId === shape.id" 
+                 class="resize-handle"
+                 @mousedown.stop="startResizeShape(shape, $event)"></div>
+
+            <v-icon v-if="tool === 'shape' && selectedShapeId === shape.id" 
+                    icon="mdi-close-circle" 
+                    color="error" 
+                    size="x-small" 
+                    class="delete-btn-shape"
+                    @click.stop="deleteShape(shape)"
+            ></v-icon>
+          </div>
         </div>
 
         <!-- Text Layer -->
@@ -231,6 +306,7 @@ const tool = ref('view')
 const signatures = ref({}) // Store signatures per page: { pageNum: dataUrl }
 const texts = ref({}) // Store texts per page: { pageNum: [{ id, x, y, text, fontSize, color }] }
 const whiteouts = ref({}) // Store whiteouts per page: { pageNum: [{ id, x, y, width, height }] }
+const shapes = ref({}) // Store shapes per page: { pageNum: [{ id, x, y, type }] }
 const viewportSize = ref({ width: 0, height: 0 })
 const editingTextId = ref(null)
 const draggingTextId = ref(null)
@@ -238,7 +314,16 @@ const dragOffset = ref({ x: 0, y: 0 })
 
 const isDrawing = ref(false)
 const isDrawingWhiteout = ref(false)
+const shapeType = ref('checkbox') // checkbox, radio, check, cross, circle
 const currentWhiteout = ref({ x: 0, y: 0, width: 0, height: 0 })
+
+// Shape Resizing/Moving State
+const selectedShapeId = ref(null)
+const resizingShapeId = ref(null)
+const draggingShapeId = ref(null)
+const initialShapeState = ref(null) // { x, y, width, height }
+const startMousePos = ref({ x: 0, y: 0 })
+
 const whiteoutStart = ref({ x: 0, y: 0 })
 const lastX = ref(0)
 const lastY = ref(0)
@@ -375,14 +460,33 @@ const handleCanvasMouseDown = (e) => {
 
 const handleCanvasClick = (e) => {
   if (tool.value === 'whiteout') return // Handled by mousedown/up
-  if (draggingTextId.value || editingTextId.value) return
+  if (draggingTextId.value || editingTextId.value || draggingShapeId.value || resizingShapeId.value) return
 
   const rect = canvasWrapper.value.getBoundingClientRect()
   const x = e.clientX - rect.left
   const y = e.clientY - rect.top
 
-  if (tool.value !== 'text') return
+  if (tool.value !== 'text' && tool.value !== 'shape') return
   
+  if (tool.value === 'shape') {
+      const newShape = {
+          id: Date.now(),
+          x: x - 10, // Center the 20x20 shape
+          y: y - 10,
+          width: 20,
+          height: 20,
+          type: shapeType.value
+      }
+      
+      if (!shapes.value[pageNum.value]) {
+          shapes.value[pageNum.value] = []
+      }
+      
+      shapes.value[pageNum.value].push(newShape)
+      selectedShapeId.value = newShape.id // Select newly created shape
+      return
+  }
+
   // Create new text
   const newText = {
     id: Date.now(),
@@ -433,6 +537,40 @@ const startDragText = (text, e) => {
   window.addEventListener('mouseup', handleWindowMouseUp)
 }
 
+const startDragShape = (shape, e) => {
+  if (tool.value !== 'shape') return
+  
+  // Select the shape
+  selectedShapeId.value = shape.id
+  
+  draggingShapeId.value = shape.id
+  const rect = canvasWrapper.value.getBoundingClientRect()
+  dragOffset.value = {
+    x: e.clientX - (rect.left + shape.x),
+    y: e.clientY - (rect.top + shape.y)
+  }
+  
+  window.addEventListener('mousemove', handleWindowMouseMove)
+  window.addEventListener('mouseup', handleWindowMouseUp)
+}
+
+const startResizeShape = (shape, e) => {
+  if (tool.value !== 'shape') return
+  
+  resizingShapeId.value = shape.id
+  initialShapeState.value = { ...shape }
+  startMousePos.value = { x: e.clientX, y: e.clientY }
+  
+  window.addEventListener('mousemove', handleWindowMouseMove)
+  window.addEventListener('mouseup', handleWindowMouseUp)
+}
+
+const selectShape = (shape) => {
+    if (tool.value === 'shape') {
+        selectedShapeId.value = shape.id
+    }
+}
+
 const handleWindowMouseMove = (e) => {
   if (draggingTextId.value) {
     const rect = canvasWrapper.value.getBoundingClientRect()
@@ -450,6 +588,42 @@ const handleWindowMouseMove = (e) => {
         
         text.x = newX
         text.y = newY
+    }
+  } else if (draggingShapeId.value) {
+    const rect = canvasWrapper.value.getBoundingClientRect()
+    const shape = shapes.value[pageNum.value].find(s => s.id === draggingShapeId.value)
+    if (shape) {
+        let newX = e.clientX - rect.left - dragOffset.value.x
+        let newY = e.clientY - rect.top - dragOffset.value.y
+        
+        // Optional: Constrain to canvas bounds
+        const viewport = viewportSize.value
+        if (newX < 0) newX = 0
+        if (newY < 0) newY = 0
+        if (viewport.width && newX > viewport.width - shape.width) newX = viewport.width - shape.width
+        if (viewport.height && newY > viewport.height - shape.height) newY = viewport.height - shape.height
+        
+        shape.x = newX
+        shape.y = newY
+    }
+  } else if (resizingShapeId.value) {
+    const shape = shapes.value[pageNum.value].find(s => s.id === resizingShapeId.value)
+    
+    if (shape && initialShapeState.value) {
+        const mouseX = e.clientX
+        
+        const deltaX = mouseX - startMousePos.value.x
+        
+        // Maintain aspect ratio 1:1 for shapes usually, or allow free?
+        // Let's allow free resize but maybe square for checkbox/radio?
+        // For simplicity, let's keep aspect ratio 1:1 if shift key is pressed?
+        // Or just simpler: let's allow free resizing for now, but usually these shapes are square.
+        // Let's enforce square for checkbox, radio, circle, check, cross to look good.
+        
+        const newSize = Math.max(10, initialShapeState.value.width + deltaX)
+        
+        shape.width = newSize
+        shape.height = newSize
     }
   } else if (isDrawingWhiteout.value) {
     const rect = canvasWrapper.value.getBoundingClientRect()
@@ -471,6 +645,11 @@ const handleWindowMouseMove = (e) => {
 const handleWindowMouseUp = () => {
   if (draggingTextId.value) {
     draggingTextId.value = null
+  } else if (draggingShapeId.value) {
+    draggingShapeId.value = null
+  } else if (resizingShapeId.value) {
+    resizingShapeId.value = null
+    initialShapeState.value = null
   } else if (isDrawingWhiteout.value) {
       isDrawingWhiteout.value = false
       if (currentWhiteout.value.width > 5 && currentWhiteout.value.height > 5) {
@@ -542,7 +721,21 @@ const clearCurrentPage = () => {
     if (whiteouts.value[pageNum.value]) {
       whiteouts.value[pageNum.value] = []
     }
+  } else if (tool.value === 'shape') {
+    if (shapes.value[pageNum.value]) {
+      shapes.value[pageNum.value] = []
+    }
   }
+}
+
+const setShapeTool = (type) => {
+    shapeType.value = type
+    tool.value = 'shape'
+}
+
+const deleteShape = (shape) => {
+  const idx = shapes.value[pageNum.value].indexOf(shape)
+  if (idx > -1) shapes.value[pageNum.value].splice(idx, 1)
 }
 
 const clearSignature = () => {
@@ -635,7 +828,75 @@ const saveSignature = async () => {
         })
       }
 
-      // 2. Embed Texts
+      // 3. Embed Shapes
+      const pageShapes = shapes.value[pNum]
+      if (pageShapes && pageShapes.length > 0) {
+        for (const s of pageShapes) {
+            const x = s.x / scale.value
+            // PDF Y is bottom-up. Center is at x+10, y+10 in view coords
+            const y = height - (s.y / scale.value) - (20 / scale.value) 
+            const size = 20 / scale.value
+            
+            if (s.type === 'checkbox') {
+                page.drawRectangle({
+                    x: x,
+                    y: y,
+                    width: size,
+                    height: size,
+                    borderColor: rgb(0, 0, 0),
+                    borderWidth: 2,
+                    color: undefined,
+                })
+            } else if (s.type === 'radio') {
+                page.drawCircle({
+                    x: x + size/2,
+                    y: y + size/2,
+                    size: size/2,
+                    borderColor: rgb(0, 0, 0),
+                    borderWidth: 2,
+                    color: undefined,
+                })
+            } else if (s.type === 'circle') {
+                page.drawCircle({
+                    x: x + size/2,
+                    y: y + size/2,
+                    size: size/2,
+                    color: rgb(0, 0, 0),
+                    borderColor: undefined,
+                })
+            } else if (s.type === 'check') {
+                // Draw checkmark manually or use a font if available. Drawing lines is safer.
+                // Simple checkmark path relative to box
+                page.drawLine({
+                    start: { x: x + size*0.2, y: y + size*0.5 },
+                    end: { x: x + size*0.4, y: y + size*0.2 },
+                    thickness: 2,
+                    color: rgb(0, 0, 0),
+                })
+                page.drawLine({
+                    start: { x: x + size*0.4, y: y + size*0.2 },
+                    end: { x: x + size*0.8, y: y + size*0.8 },
+                    thickness: 2,
+                    color: rgb(0, 0, 0),
+                })
+            } else if (s.type === 'cross') {
+                page.drawLine({
+                    start: { x: x, y: y },
+                    end: { x: x + size, y: y + size },
+                    thickness: 2,
+                    color: rgb(0, 0, 0),
+                })
+                page.drawLine({
+                    start: { x: x, y: y + size },
+                    end: { x: x + size, y: y },
+                    thickness: 2,
+                    color: rgb(0, 0, 0),
+                })
+            }
+        }
+      }
+
+      // 4. Embed Texts
       const pageTexts = texts.value[pNum]
       if (pageTexts && pageTexts.length > 0) {
         for (const t of pageTexts) {
@@ -828,6 +1089,52 @@ const downloadBlob = (data, fileName, mimeType) => {
   }
 
   .whiteout-element:hover .delete-btn-whiteout {
+    display: block;
+  }
+
+  .shape-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 25; /* Above text layer (20) */
+  }
+
+  .shape-element {
+    position: absolute;
+    cursor: pointer;
+  }
+
+  .shape-element.is-selected {
+    outline: 2px dashed #1976D2;
+  }
+
+  .resize-handle {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    width: 10px;
+    height: 10px;
+    background: #1976D2;
+    border: 1px solid white;
+    cursor: nwse-resize;
+    z-index: 31;
+  }
+
+  .delete-btn-shape {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    display: none;
+    z-index: 30;
+  }
+
+  .shape-element:hover .delete-btn-shape,
+  .shape-element.is-selected .delete-btn-shape {
     display: block;
   }
 </style>
