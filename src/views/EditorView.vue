@@ -37,6 +37,10 @@
             <v-icon start>mdi-format-text</v-icon>
             Text
           </v-btn>
+          <v-btn value="highlight" size="small">
+            <v-icon start>mdi-format-color-highlight</v-icon>
+            Highlight
+          </v-btn>
           <v-btn value="whiteout" size="small">
             <v-icon start>mdi-eraser-variant</v-icon>
             Erase
@@ -76,9 +80,19 @@
         
         <v-spacer></v-spacer>
 
-        <template v-if="tool === 'sign' || tool === 'text' || tool === 'whiteout' || tool === 'shape'">
-          <v-btn color="error" variant="text" @click="clearCurrentPage" class="mr-2" prepend-icon="mdi-eraser">
-            Clear
+        <!-- History Controls -->
+        <v-btn icon size="small" variant="text" @click="undo" :disabled="historyIndex <= 0" title="Undo">
+          <v-icon>mdi-undo</v-icon>
+        </v-btn>
+        <v-btn icon size="small" variant="text" @click="redo" :disabled="historyIndex >= history.length - 1" title="Redo">
+          <v-icon>mdi-redo</v-icon>
+        </v-btn>
+        
+        <v-divider vertical class="mx-2"></v-divider>
+
+        <template v-if="tool === 'sign' || tool === 'text' || tool === 'whiteout' || tool === 'shape' || tool === 'highlight'">
+          <v-btn color="error" variant="text" @click="resetCurrentPage" class="mr-2" prepend-icon="mdi-refresh">
+            Reset Page
           </v-btn>
           <v-btn color="success" variant="flat" @click="saveSignature" prepend-icon="mdi-download">
             Download
@@ -102,6 +116,37 @@
           @mouseleave="stopDrawing"
         ></canvas>
         
+        <!-- Highlight Layer -->
+        <div class="highlight-layer" :class="{ 'pointer-events-none': tool !== 'highlight' }">
+           <div v-for="h in (highlights[pageNum] || [])" :key="h.id"
+                class="highlight-element"
+                :style="{ 
+                  left: h.x + 'px', 
+                  top: h.y + 'px', 
+                  width: h.width + 'px', 
+                  height: h.height + 'px' 
+                }">
+             <v-icon v-if="tool === 'highlight'" 
+                     icon="mdi-close-circle" 
+                     color="error" 
+                     size="x-small" 
+                     class="delete-btn-highlight"
+                     @click.stop="deleteHighlight(h)"
+             ></v-icon>
+           </div>
+           
+           <!-- Current drawing highlight -->
+           <div v-if="isDrawingHighlight"
+                class="highlight-element drawing"
+                :style="{
+                  left: currentHighlight.x + 'px',
+                  top: currentHighlight.y + 'px',
+                  width: currentHighlight.width + 'px',
+                  height: currentHighlight.height + 'px'
+                }">
+           </div>
+        </div>
+
         <!-- Whiteout Layer -->
         <div class="whiteout-layer" :class="{ 'pointer-events-none': tool !== 'whiteout' }">
            <div v-for="w in (whiteouts[pageNum] || [])" :key="w.id"
@@ -306,6 +351,7 @@ const tool = ref('view')
 const signatures = ref({}) // Store signatures per page: { pageNum: dataUrl }
 const texts = ref({}) // Store texts per page: { pageNum: [{ id, x, y, text, fontSize, color }] }
 const whiteouts = ref({}) // Store whiteouts per page: { pageNum: [{ id, x, y, width, height }] }
+const highlights = ref({}) // Store highlights per page: { pageNum: [{ id, x, y, width, height }] }
 const shapes = ref({}) // Store shapes per page: { pageNum: [{ id, x, y, type }] }
 const viewportSize = ref({ width: 0, height: 0 })
 const editingTextId = ref(null)
@@ -314,8 +360,15 @@ const dragOffset = ref({ x: 0, y: 0 })
 
 const isDrawing = ref(false)
 const isDrawingWhiteout = ref(false)
+const isDrawingHighlight = ref(false)
 const shapeType = ref('checkbox') // checkbox, radio, check, cross, circle
 const currentWhiteout = ref({ x: 0, y: 0, width: 0, height: 0 })
+const currentHighlight = ref({ x: 0, y: 0, width: 0, height: 0 })
+
+// History State
+const history = ref([])
+const historyIndex = ref(-1)
+const isHistoryAction = ref(false)
 
 // Shape Resizing/Moving State
 const selectedShapeId = ref(null)
@@ -325,6 +378,7 @@ const initialShapeState = ref(null) // { x, y, width, height }
 const startMousePos = ref({ x: 0, y: 0 })
 
 const whiteoutStart = ref({ x: 0, y: 0 })
+const highlightStart = ref({ x: 0, y: 0 })
 const lastX = ref(0)
 const lastY = ref(0)
 
@@ -341,11 +395,76 @@ onMounted(async () => {
     pdfDoc.value = await loadingTask.promise
     numPages.value = pdfDoc.value.numPages
     await renderPage(pageNum.value)
+    // Initial history push
+    pushToHistory()
   } catch (error) {
     console.error('Error loading PDF:', error)
     alert('Failed to load PDF file.')
   }
 })
+
+// Initialize history
+const pushToHistory = () => {
+    if (isHistoryAction.value) return
+
+    // Deep clone current state
+    const state = {
+        signatures: JSON.parse(JSON.stringify(signatures.value)),
+        texts: JSON.parse(JSON.stringify(texts.value)),
+        whiteouts: JSON.parse(JSON.stringify(whiteouts.value)),
+        shapes: JSON.parse(JSON.stringify(shapes.value)),
+        highlights: JSON.parse(JSON.stringify(highlights.value))
+    }
+
+    // Remove future history if we pushed a new action while in the middle of history
+    if (historyIndex.value < history.value.length - 1) {
+        history.value = history.value.slice(0, historyIndex.value + 1)
+    }
+
+    history.value.push(state)
+    historyIndex.value++
+    
+    // Limit history size
+    if (history.value.length > 50) {
+        history.value.shift()
+        historyIndex.value--
+    }
+}
+
+const undo = () => {
+    if (historyIndex.value > 0) {
+        isHistoryAction.value = true
+        historyIndex.value--
+        restoreState(history.value[historyIndex.value])
+        
+        // Re-render current page to update canvas (signatures)
+        renderPage(pageNum.value)
+        
+        // Use nextTick to allow DOM updates then reset flag
+        setTimeout(() => { isHistoryAction.value = false }, 50)
+    }
+}
+
+const redo = () => {
+    if (historyIndex.value < history.value.length - 1) {
+        isHistoryAction.value = true
+        historyIndex.value++
+        restoreState(history.value[historyIndex.value])
+        
+        // Re-render current page
+        renderPage(pageNum.value)
+        
+        setTimeout(() => { isHistoryAction.value = false }, 50)
+    }
+}
+
+const restoreState = (state) => {
+    signatures.value = JSON.parse(JSON.stringify(state.signatures))
+    texts.value = JSON.parse(JSON.stringify(state.texts))
+    whiteouts.value = JSON.parse(JSON.stringify(state.whiteouts))
+    shapes.value = JSON.parse(JSON.stringify(state.shapes))
+    highlights.value = JSON.parse(JSON.stringify(state.highlights))
+}
 
 onUnmounted(() => {
   window.removeEventListener('mousemove', handleWindowMouseMove)
@@ -392,7 +511,13 @@ const renderPage = async (num) => {
 
 const saveCurrentSignature = () => {
   if (signCanvas.value) {
-    signatures.value[pageNum.value] = signCanvas.value.toDataURL('image/png')
+    const dataUrl = signCanvas.value.toDataURL('image/png')
+    // Only save if changed or not empty (optimization: check if canvas is blank?)
+    // For now, simple save. 
+    // We should only push history if it actually changed.
+    // But since this is called on page navigation, it's tricky.
+    // Better to hook into mouseup of drawing.
+    signatures.value[pageNum.value] = dataUrl
   }
 }
 
@@ -440,7 +565,11 @@ const draw = (e) => {
 }
 
 const stopDrawing = () => {
-  isDrawing.value = false
+  if (isDrawing.value) {
+      isDrawing.value = false
+      saveCurrentSignature() // Save to state
+      pushToHistory() // Push state to history
+  }
 }
 
 const handleCanvasMouseDown = (e) => {
@@ -455,11 +584,22 @@ const handleCanvasMouseDown = (e) => {
       
       window.addEventListener('mousemove', handleWindowMouseMove)
       window.addEventListener('mouseup', handleWindowMouseUp)
+  } else if (tool.value === 'highlight') {
+      const rect = canvasWrapper.value.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      isDrawingHighlight.value = true
+      highlightStart.value = { x, y }
+      currentHighlight.value = { x, y, width: 0, height: 0 }
+      
+      window.addEventListener('mousemove', handleWindowMouseMove)
+      window.addEventListener('mouseup', handleWindowMouseUp)
   }
 }
 
 const handleCanvasClick = (e) => {
-  if (tool.value === 'whiteout') return // Handled by mousedown/up
+  if (tool.value === 'whiteout' || tool.value === 'highlight') return // Handled by mousedown/up
   if (draggingTextId.value || editingTextId.value || draggingShapeId.value || resizingShapeId.value) return
 
   const rect = canvasWrapper.value.getBoundingClientRect()
@@ -484,6 +624,7 @@ const handleCanvasClick = (e) => {
       
       shapes.value[pageNum.value].push(newShape)
       selectedShapeId.value = newShape.id // Select newly created shape
+      pushToHistory()
       return
   }
 
@@ -506,8 +647,7 @@ const handleCanvasClick = (e) => {
   
   texts.value[pageNum.value].push(newText)
   editingTextId.value = newText.id
-  
-  // Focus will be handled by v-if
+  // We don't push to history yet, only when editing finishes
 }
 
 const startDragText = (text, e) => {
@@ -623,34 +763,41 @@ const handleWindowMouseMove = (e) => {
         const newSize = Math.max(10, initialShapeState.value.width + deltaX)
         
         shape.width = newSize
-        shape.height = newSize
-    }
-  } else if (isDrawingWhiteout.value) {
-    const rect = canvasWrapper.value.getBoundingClientRect()
-    const currentX = e.clientX - rect.left
-    const currentY = e.clientY - rect.top
-    
-    const width = currentX - whiteoutStart.value.x
-    const height = currentY - whiteoutStart.value.y
-    
-    currentWhiteout.value = {
-        x: width > 0 ? whiteoutStart.value.x : currentX,
-        y: height > 0 ? whiteoutStart.value.y : currentY,
-        width: Math.abs(width),
-        height: Math.abs(height)
-    }
-  }
+         shape.height = newSize
+     }
+   } else if (isDrawingWhiteout.value) {
+     const rect = canvasWrapper.value.getBoundingClientRect()
+     const currentX = e.clientX - rect.left
+     const currentY = e.clientY - rect.top
+     
+     const width = currentX - whiteoutStart.value.x
+     const height = currentY - whiteoutStart.value.y
+     
+     currentWhiteout.value = {
+         x: width > 0 ? whiteoutStart.value.x : currentX,
+         y: height > 0 ? whiteoutStart.value.y : currentY,
+         width: Math.abs(width),
+         height: Math.abs(height)
+     }
+   } else if (isDrawingHighlight.value) {
+     const rect = canvasWrapper.value.getBoundingClientRect()
+     const currentX = e.clientX - rect.left
+     const currentY = e.clientY - rect.top
+     
+     const width = currentX - highlightStart.value.x
+     const height = currentY - highlightStart.value.y
+     
+     currentHighlight.value = {
+         x: width > 0 ? highlightStart.value.x : currentX,
+         y: height > 0 ? highlightStart.value.y : currentY,
+         width: Math.abs(width),
+         height: Math.abs(height)
+     }
+   }
 }
 
 const handleWindowMouseUp = () => {
-  if (draggingTextId.value) {
-    draggingTextId.value = null
-  } else if (draggingShapeId.value) {
-    draggingShapeId.value = null
-  } else if (resizingShapeId.value) {
-    resizingShapeId.value = null
-    initialShapeState.value = null
-  } else if (isDrawingWhiteout.value) {
+  if (isDrawingWhiteout.value) {
       isDrawingWhiteout.value = false
       if (currentWhiteout.value.width > 5 && currentWhiteout.value.height > 5) {
           if (!whiteouts.value[pageNum.value]) {
@@ -660,8 +807,34 @@ const handleWindowMouseUp = () => {
               id: Date.now(),
               ...currentWhiteout.value
           })
+          pushToHistory()
       }
       currentWhiteout.value = { x: 0, y: 0, width: 0, height: 0 }
+  } else if (isDrawingHighlight.value) {
+      isDrawingHighlight.value = false
+      if (currentHighlight.value.width > 5 && currentHighlight.value.height > 5) {
+          if (!highlights.value[pageNum.value]) {
+              highlights.value[pageNum.value] = []
+          }
+          highlights.value[pageNum.value].push({
+              id: Date.now(),
+              ...currentHighlight.value
+          })
+          pushToHistory()
+      }
+      currentHighlight.value = { x: 0, y: 0, width: 0, height: 0 }
+  } else if (draggingTextId.value || draggingShapeId.value || resizingShapeId.value) {
+      // End of drag/resize
+      pushToHistory()
+      
+      if (draggingTextId.value) {
+        draggingTextId.value = null
+      } else if (draggingShapeId.value) {
+        draggingShapeId.value = null
+      } else if (resizingShapeId.value) {
+        resizingShapeId.value = null
+        initialShapeState.value = null
+      }
   }
   
   window.removeEventListener('mousemove', handleWindowMouseMove)
@@ -669,11 +842,18 @@ const handleWindowMouseUp = () => {
 }
 
 const finishEditing = (text) => {
+  const wasEditing = editingTextId.value
   editingTextId.value = null
   if (!text.text || !text.text.trim()) {
      // Remove empty text
      const idx = texts.value[pageNum.value].indexOf(text)
-     if (idx > -1) texts.value[pageNum.value].splice(idx, 1)
+     if (idx > -1) {
+         texts.value[pageNum.value].splice(idx, 1)
+         pushToHistory()
+     }
+  } else if (wasEditing) {
+      // Text changed
+      pushToHistory()
   }
 }
 
@@ -685,20 +865,49 @@ const editText = (text) => {
 
 const deleteText = (text) => {
   const idx = texts.value[pageNum.value].indexOf(text)
-  if (idx > -1) texts.value[pageNum.value].splice(idx, 1)
+  if (idx > -1) {
+      texts.value[pageNum.value].splice(idx, 1)
+      pushToHistory()
+  }
 }
 
 const deleteWhiteout = (w) => {
   const idx = whiteouts.value[pageNum.value].indexOf(w)
-  if (idx > -1) whiteouts.value[pageNum.value].splice(idx, 1)
+  if (idx > -1) {
+      whiteouts.value[pageNum.value].splice(idx, 1)
+      pushToHistory()
+  }
+}
+
+const deleteHighlight = (h) => {
+  const idx = highlights.value[pageNum.value].indexOf(h)
+  if (idx > -1) {
+      highlights.value[pageNum.value].splice(idx, 1)
+      pushToHistory()
+  }
+}
+
+const setShapeTool = (type) => {
+    shapeType.value = type
+    tool.value = 'shape'
+}
+
+const deleteShape = (shape) => {
+  const idx = shapes.value[pageNum.value].indexOf(shape)
+  if (idx > -1) {
+      shapes.value[pageNum.value].splice(idx, 1)
+      pushToHistory()
+  }
 }
 
 const toggleBold = (text) => {
   text.isBold = !text.isBold
+  pushToHistory()
 }
 
 const toggleItalic = (text) => {
   text.isItalic = !text.isItalic
+  pushToHistory()
 }
 
 const getCssFontFamily = (pdfFontFamily) => {
@@ -710,38 +919,25 @@ const getCssFontFamily = (pdfFontFamily) => {
   }
 }
 
-const clearCurrentPage = () => {
-  if (tool.value === 'sign') {
-    clearSignature()
-  } else if (tool.value === 'text') {
-    if (texts.value[pageNum.value]) {
-      texts.value[pageNum.value] = []
+const resetCurrentPage = () => {
+    if (!confirm('Are you sure you want to reset all edits on this page?')) return
+    
+    const current = pageNum.value
+    
+    signatures.value[current] = null
+    if (texts.value[current]) texts.value[current] = []
+    if (whiteouts.value[current]) whiteouts.value[current] = []
+    if (shapes.value[current]) shapes.value[current] = []
+    if (highlights.value[current]) highlights.value[current] = []
+    
+    // Clear canvas
+    const canvas = signCanvas.value
+    if (canvas) {
+        const ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
     }
-  } else if (tool.value === 'whiteout') {
-    if (whiteouts.value[pageNum.value]) {
-      whiteouts.value[pageNum.value] = []
-    }
-  } else if (tool.value === 'shape') {
-    if (shapes.value[pageNum.value]) {
-      shapes.value[pageNum.value] = []
-    }
-  }
-}
-
-const setShapeTool = (type) => {
-    shapeType.value = type
-    tool.value = 'shape'
-}
-
-const deleteShape = (shape) => {
-  const idx = shapes.value[pageNum.value].indexOf(shape)
-  if (idx > -1) shapes.value[pageNum.value].splice(idx, 1)
-}
-
-const clearSignature = () => {
-  const canvas = signCanvas.value
-  const ctx = canvas.getContext('2d')
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    pushToHistory()
 }
 
 const saveSignature = async () => {
@@ -920,6 +1116,26 @@ const saveSignature = async () => {
             })
         }
       }
+      // 5. Embed Highlights (Last, with transparency)
+      const pageHighlights = highlights.value[pNum]
+      if (pageHighlights && pageHighlights.length > 0) {
+        for (const h of pageHighlights) {
+            const x = h.x / scale.value
+            // PDF Y is bottom-up
+            const y = height - (h.y / scale.value) - (h.height / scale.value)
+            
+            page.drawRectangle({
+                x: x,
+                y: y,
+                width: h.width / scale.value,
+                height: h.height / scale.value,
+                color: rgb(1, 1, 0), // Yellow
+                opacity: 0.4,
+                borderColor: undefined,
+                borderWidth: 0,
+            })
+        }
+      }
     }
     
     const pdfBytes = await pdfDoc.save()
@@ -1089,6 +1305,42 @@ const downloadBlob = (data, fileName, mimeType) => {
   }
 
   .whiteout-element:hover .delete-btn-whiteout {
+    display: block;
+  }
+
+  .highlight-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 18; /* Above whiteout (15), below text (20) */
+  }
+
+  .highlight-element {
+    position: absolute;
+    background-color: rgba(255, 255, 0, 0.4); /* Yellow with 40% opacity */
+  }
+  
+  .highlight-element.drawing {
+    border: 1px dashed #FFD600;
+  }
+
+  .highlight-element:hover {
+    border: 1px dashed #FFD600;
+  }
+
+  .delete-btn-highlight {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    display: none;
+  }
+
+  .highlight-element:hover .delete-btn-highlight {
     display: block;
   }
 
