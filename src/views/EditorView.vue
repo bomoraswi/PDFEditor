@@ -63,7 +63,7 @@
           <div class="d-flex flex-column flex-grow-1 h-100 w-100 overflow-hidden">
               <!-- Toolbar (Always visible, but tools might change based on mode if needed, for now keep same) -->
               <v-toolbar density="compact" class="mb-4 px-2 border-b flex-shrink-0" elevation="0" color="#e7ecf1" height="80">
-                <v-btn icon @click="router.push('/options')" title="Back to Options" class="mr-2">
+                <v-btn icon @click="router.push('/')" title="Back to Home" class="mr-2">
                   <v-icon>mdi-arrow-left</v-icon>
                 </v-btn>
                 
@@ -1561,7 +1561,8 @@ const handleCanvasClick = (e) => {
 }
 
 const startDragText = (text, e) => {
-  if (tool.value !== 'text') return
+  // Allow dragging if in Form Mode, or if tool is 'text'
+  if (!isFormMode.value && tool.value !== 'text') return
   
   // If we are editing THIS text, only allow drag if we clicked the handle (or not the textarea)
   if (editingTextId.value === text.id) {
@@ -1588,7 +1589,7 @@ const startDragText = (text, e) => {
 }
 
 const startDragShape = (shape, e) => {
-  if (tool.value !== 'shape') return
+  if (!isFormMode.value && tool.value !== 'shape') return
   
   // Select the shape
   selectedShapeId.value = shape.id
@@ -1605,7 +1606,7 @@ const startDragShape = (shape, e) => {
 }
 
 const startResizeShape = (shape, e) => {
-  if (tool.value !== 'shape') return
+  if (!isFormMode.value && tool.value !== 'shape') return
   
   resizingShapeId.value = shape.id
   initialShapeState.value = { ...shape }
@@ -1616,7 +1617,7 @@ const startResizeShape = (shape, e) => {
 }
 
 const selectShape = (shape) => {
-    if (tool.value === 'shape') {
+    if (isFormMode.value || tool.value === 'shape') {
         selectedShapeId.value = shape.id
     }
 }
@@ -2039,7 +2040,7 @@ const finishEditing = (text) => {
 }
 
 const editText = (text) => {
-  if (tool.value === 'text') {
+  if (isFormMode.value || tool.value === 'text') {
     editingTextId.value = text.id
   }
 }
