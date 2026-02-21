@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center bg-white" fluid>
+  <div class="fill-height d-flex flex-column align-center bg-white pa-0" fluid>
     <!-- Signature Modal -->
     <v-dialog v-model="showSignatureModal" max-width="500px">
       <v-card>
@@ -30,167 +30,245 @@
     </div>
     
     <div v-else class="d-flex flex-column align-center w-100 h-100">
-      <!-- Toolbar -->
-      <v-toolbar density="compact" class="mb-4 rounded-lg px-2 border-b" elevation="0" color="white" height="80">
-        <v-btn icon @click="router.push('/options')" title="Back to Options" class="mr-2">
-          <v-icon>mdi-arrow-left</v-icon>
-        </v-btn>
-        
-        <v-divider vertical class="mx-2 my-4"></v-divider>
+      <!-- Top Mode Switcher -->
+      <div class="d-flex align-center px-4 bg-white border-b" style="height: 50px; width: 100%; z-index: 10;">
+          <v-btn variant="text" :color="!isFormMode ? 'primary' : 'grey-darken-1'" @click="isFormMode = false" class="text-capitalize font-weight-bold mr-2">Edit</v-btn>
+          <v-btn variant="text" :color="isFormMode ? 'primary' : 'grey-darken-1'" @click="isFormMode = true" class="text-capitalize font-weight-bold">Create Form</v-btn>
+      </div>
 
-        <v-btn-toggle v-model="tool" mandatory density="compact" class="mx-2 d-flex align-center" color="primary" variant="text" :divided="false">
-          <v-btn value="view" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
-            <v-icon size="24" class="mb-1">mdi-eye</v-icon>
-            <span class="text-caption text-capitalize">Read</span>
-          </v-btn>
-          
-          <v-btn value="sign" class="d-flex flex-column align-center justify-center py-2" height="64" width="80" @click="openSignatureModal">
-            <v-icon size="24" class="mb-1">mdi-draw</v-icon>
-            <span class="text-caption text-capitalize">Sign</span>
-          </v-btn>
-          
-          <v-btn value="text" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
-            <v-icon size="24" class="mb-1">mdi-format-text</v-icon>
-            <span class="text-caption text-capitalize">Text</span>
-          </v-btn>
-          
-          <v-btn value="highlight" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
-            <v-icon size="24" class="mb-1">mdi-format-color-highlight</v-icon>
-            <span class="text-caption text-capitalize">Highlight</span>
-          </v-btn>
-          
-          <v-btn value="strikeout" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
-            <v-icon size="24" class="mb-1">mdi-format-strikethrough</v-icon>
-            <span class="text-caption text-capitalize">Strike</span>
-          </v-btn>
-          
-          <v-btn value="underline" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
-            <v-icon size="24" class="mb-1">mdi-format-underline</v-icon>
-            <span class="text-caption text-capitalize">Underline</span>
-          </v-btn>
-          
-          <v-btn value="whiteout" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
-            <v-icon size="24" class="mb-1">mdi-eraser-variant</v-icon>
-            <span class="text-caption text-capitalize">Whiteout</span>
-          </v-btn>
-          
-          <v-btn value="redact" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
-            <v-icon size="24" class="mb-1">mdi-eye-off</v-icon>
-            <span class="text-caption text-capitalize">Redact</span>
-          </v-btn>
-          
-          <v-btn value="image" class="d-flex flex-column align-center justify-center py-2" height="64" width="80" @click="triggerImageUpload">
-            <v-icon size="24" class="mb-1">mdi-image</v-icon>
-            <span class="text-caption text-capitalize">Image</span>
-          </v-btn>
-          <input type="file" ref="imageInput" accept="image/png, image/jpeg, image/jpg" style="display: none" @change="handleImageUpload">
-          
-          <v-btn value="watermark" class="d-flex flex-column align-center justify-center py-2" height="64" width="80" @click="openWatermarkDialog">
-            <v-icon size="24" class="mb-1">mdi-watermark</v-icon>
-            <span class="text-caption text-capitalize">Watermark</span>
-          </v-btn>
+      <div class="d-flex w-100 flex-grow-1 overflow-hidden position-relative">
+          <!-- Form Elements Sidebar -->
+          <div v-if="isFormMode" class="bg-white border-r overflow-y-auto pa-4" style="width: 280px; min-width: 280px; height: 100%;">
+              <div class="text-subtitle-2 font-weight-bold mb-4">Add form elements</div>
+              <v-row dense>
+                  <v-col cols="6" v-for="(item, i) in formElements" :key="i">
+                      <v-card
+                          variant="outlined"
+                          class="d-flex flex-column align-center justify-center py-4 px-2 mb-2 fill-height cursor-pointer form-element-card"
+                          color="orange-lighten-5"
+                          style="border-color: #ffe0b2 !important;"
+                          @mousedown="startDragFormElement($event, item)"
+                          @click="addFormElement(item)"
+                          draggable="true"
+                      >
+                          <div class="d-flex justify-space-between w-100 align-center mb-1 px-1">
+                              <span class="text-caption font-weight-medium text-grey-darken-3 text-truncate" style="font-size: 0.75rem !important;">{{ item.label }}</span>
+                              <v-icon size="x-small" color="grey-darken-3">{{ item.icon }}</v-icon>
+                          </div>
+                      </v-card>
+                  </v-col>
+              </v-row>
+          </div>
 
-          <v-menu location="bottom">
-            <template v-slot:activator="{ props }">
-               <v-btn value="draw" v-bind="props" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
-                 <v-icon size="24" class="mb-1">mdi-pencil</v-icon>
-                 <span class="text-caption text-capitalize">Draw</span>
-                 <v-icon size="x-small" class="mt-1">mdi-chevron-down</v-icon>
-               </v-btn>
-            </template>
-            <v-list density="compact">
-               <v-list-item @click="setDrawTool('pencil')" :active="drawType === 'pencil'">
-                  <template v-slot:prepend><v-icon>mdi-pencil</v-icon></template>
-                  <v-list-item-title>Pencil</v-list-item-title>
-               </v-list-item>
-               <v-list-item @click="setDrawTool('line')" :active="drawType === 'line'">
-                  <template v-slot:prepend><v-icon>mdi-minus</v-icon></template>
-                  <v-list-item-title>Line</v-list-item-title>
-               </v-list-item>
-               <v-list-item @click="setDrawTool('arrow')" :active="drawType === 'arrow'">
-                  <template v-slot:prepend><v-icon>mdi-arrow-right</v-icon></template>
-                  <v-list-item-title>Arrow</v-list-item-title>
-               </v-list-item>
-               <v-list-item @click="setDrawTool('polygon')" :active="drawType === 'polygon'">
-                  <template v-slot:prepend><v-icon>mdi-vector-polygon</v-icon></template>
-                  <v-list-item-title>Polygon</v-list-item-title>
-               </v-list-item>
-            </v-list>
-          </v-menu>
+          <div class="d-flex flex-column flex-grow-1 h-100 w-100 overflow-hidden">
+              <!-- Toolbar (Always visible, but tools might change based on mode if needed, for now keep same) -->
+              <v-toolbar density="compact" class="mb-4 px-2 border-b flex-shrink-0" elevation="0" color="#e7ecf1" height="80">
+                <v-btn icon @click="router.push('/options')" title="Back to Options" class="mr-2">
+                  <v-icon>mdi-arrow-left</v-icon>
+                </v-btn>
+                
+                <v-divider vertical class="mx-2 my-4"></v-divider>
 
-          <v-menu location="bottom">
-            <template v-slot:activator="{ props }">
-               <v-btn value="shape" v-bind="props" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
-                 <v-icon size="24" class="mb-1">mdi-shape</v-icon>
-                 <span class="text-caption text-capitalize">Shape</span>
-                 <v-icon size="x-small" class="mt-1">mdi-chevron-down</v-icon>
-               </v-btn>
-            </template>
-            <v-list density="compact">
-               <v-list-item @click="setShapeTool('checkbox')" :active="shapeType === 'checkbox'">
-                  <template v-slot:prepend><v-icon>mdi-checkbox-blank-outline</v-icon></template>
-                  <v-list-item-title>Checkbox</v-list-item-title>
-               </v-list-item>
-               <v-list-item @click="setShapeTool('radio')" :active="shapeType === 'radio'">
-                  <template v-slot:prepend><v-icon>mdi-radiobox-blank</v-icon></template>
-                  <v-list-item-title>Radio Button</v-list-item-title>
-               </v-list-item>
-               <v-list-item @click="setShapeTool('check')" :active="shapeType === 'check'">
-                  <template v-slot:prepend><v-icon>mdi-check</v-icon></template>
-                  <v-list-item-title>Check Mark</v-list-item-title>
-               </v-list-item>
-               <v-list-item @click="setShapeTool('cross')" :active="shapeType === 'cross'">
-                  <template v-slot:prepend><v-icon>mdi-close</v-icon></template>
-                  <v-list-item-title>Cross (X)</v-list-item-title>
-               </v-list-item>
-               <v-list-item @click="setShapeTool('circle')" :active="shapeType === 'circle'">
-                  <template v-slot:prepend><v-icon>mdi-circle</v-icon></template>
-                  <v-list-item-title>Black Circle</v-list-item-title>
-               </v-list-item>
-            </v-list>
-          </v-menu>
-        </v-btn-toggle>
-        
-        <v-spacer></v-spacer>
+                <div class="mx-2 d-flex align-center">
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'view' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'view'">
+                    <v-icon size="24" class="mb-1">mdi-eye</v-icon>
+                    <span class="text-caption text-capitalize">Read</span>
+                  </div>
+                  
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'sign' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'sign'; openSignatureModal()">
+                    <v-icon size="24" class="mb-1">mdi-draw</v-icon>
+                    <span class="text-caption text-capitalize">Sign</span>
+                  </div>
+                  
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'text' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'text'">
+                    <v-icon size="24" class="mb-1">mdi-format-text</v-icon>
+                    <span class="text-caption text-capitalize">Text</span>
+                  </div>
+                  
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'highlight' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'highlight'">
+                    <v-icon size="24" class="mb-1">mdi-format-color-highlight</v-icon>
+                    <span class="text-caption text-capitalize">Highlight</span>
+                  </div>
+                  
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'strikeout' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'strikeout'">
+                    <v-icon size="24" class="mb-1">mdi-format-strikethrough</v-icon>
+                    <span class="text-caption text-capitalize">Strike</span>
+                  </div>
+                  
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'underline' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'underline'">
+                    <v-icon size="24" class="mb-1">mdi-format-underline</v-icon>
+                    <span class="text-caption text-capitalize">Underline</span>
+                  </div>
+                  
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'whiteout' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'whiteout'">
+                    <v-icon size="24" class="mb-1">mdi-eraser-variant</v-icon>
+                    <span class="text-caption text-capitalize">Whiteout</span>
+                  </div>
+                  
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'redact' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'redact'">
+                    <v-icon size="24" class="mb-1">mdi-eye-off</v-icon>
+                    <span class="text-caption text-capitalize">Redact</span>
+                  </div>
+                  
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'image' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'image'; triggerImageUpload()">
+                    <v-icon size="24" class="mb-1">mdi-image</v-icon>
+                    <span class="text-caption text-capitalize">Image</span>
+                  </div>
+                  <input type="file" ref="imageInput" accept="image/png, image/jpeg, image/jpg" style="display: none" @change="handleImageUpload">
+                  
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'table' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'table'; openTableDialog()">
+                    <v-icon size="24" class="mb-1">mdi-table</v-icon>
+                    <span class="text-caption text-capitalize">Table</span>
+                  </div>
 
-        <!-- Page Navigation -->
-        <div class="d-flex align-center mx-2 text-grey-darken-1">
-            <v-btn icon size="small" variant="text" @click="prevPage" :disabled="pageNum <= 1">
-              <v-icon>mdi-chevron-left</v-icon>
-            </v-btn>
-            <span class="mx-2 text-caption font-weight-medium">Page {{ pageNum }} / {{ numPages }}</span>
-            <v-btn icon size="small" variant="text" @click="nextPage" :disabled="pageNum >= numPages">
-              <v-icon>mdi-chevron-right</v-icon>
-            </v-btn>
-        </div>
+                  <div class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                       :class="tool === 'watermark' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                       style="width: 80px; height: 64px"
+                       @click="tool = 'watermark'; openWatermarkDialog()">
+                    <v-icon size="24" class="mb-1">mdi-watermark</v-icon>
+                    <span class="text-caption text-capitalize">Watermark</span>
+                  </div>
 
-        <v-divider vertical class="mx-2 my-4"></v-divider>
+                  <v-menu location="bottom">
+                    <template v-slot:activator="{ props }">
+                       <div v-bind="props"
+                            class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                            :class="tool === 'draw' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                            style="width: 80px; height: 64px"
+                            @click="tool = 'draw'">
+                         <v-icon size="24" class="mb-1">mdi-pencil</v-icon>
+                         <span class="text-caption text-capitalize">Draw</span>
+                       </div>
+                    </template>
+                    <v-list density="compact">
+                       <v-list-item @click="setDrawTool('pencil')" :active="drawType === 'pencil'">
+                          <template v-slot:prepend><v-icon>mdi-pencil</v-icon></template>
+                          <v-list-item-title>Pencil</v-list-item-title>
+                       </v-list-item>
+                       <v-list-item @click="setDrawTool('line')" :active="drawType === 'line'">
+                          <template v-slot:prepend><v-icon>mdi-minus</v-icon></template>
+                          <v-list-item-title>Line</v-list-item-title>
+                       </v-list-item>
+                       <v-list-item @click="setDrawTool('arrow')" :active="drawType === 'arrow'">
+                          <template v-slot:prepend><v-icon>mdi-arrow-right</v-icon></template>
+                          <v-list-item-title>Arrow</v-list-item-title>
+                       </v-list-item>
+                       <v-list-item @click="setDrawTool('polygon')" :active="drawType === 'polygon'">
+                          <template v-slot:prepend><v-icon>mdi-vector-polygon</v-icon></template>
+                          <v-list-item-title>Polygon</v-list-item-title>
+                       </v-list-item>
+                    </v-list>
+                  </v-menu>
 
-        <!-- History Controls -->
-        <v-btn icon size="small" variant="text" @click="undo" :disabled="historyIndex <= 0" title="Undo">
-          <v-icon>mdi-undo</v-icon>
-        </v-btn>
-        <v-btn icon size="small" variant="text" @click="redo" :disabled="historyIndex >= history.length - 1" title="Redo">
-          <v-icon>mdi-redo</v-icon>
-        </v-btn>
-        
-        <v-divider vertical class="mx-2 my-4"></v-divider>
+                  <v-menu location="bottom">
+                    <template v-slot:activator="{ props }">
+                       <div v-bind="props"
+                            class="d-flex flex-column align-center justify-center py-2 rounded mx-1 cursor-pointer tool-item"
+                            :class="tool === 'shape' ? 'bg-blue-lighten-5 text-primary' : 'text-grey-darken-2'"
+                            style="width: 80px; height: 64px"
+                            @click="tool = 'shape'">
+                         <v-icon size="24" class="mb-1">mdi-shape</v-icon>
+                         <span class="text-caption text-capitalize">Shape</span>
+                       </div>
+                    </template>
+                    <v-list density="compact">
+                       <v-list-item @click="setShapeTool('checkbox')" :active="shapeType === 'checkbox'">
+                          <template v-slot:prepend><v-icon>mdi-checkbox-blank-outline</v-icon></template>
+                          <v-list-item-title>Checkbox</v-list-item-title>
+                       </v-list-item>
+                       <v-list-item @click="setShapeTool('radio')" :active="shapeType === 'radio'">
+                          <template v-slot:prepend><v-icon>mdi-radiobox-blank</v-icon></template>
+                          <v-list-item-title>Radio Button</v-list-item-title>
+                       </v-list-item>
+                       <v-list-item @click="setShapeTool('check')" :active="shapeType === 'check'">
+                          <template v-slot:prepend><v-icon>mdi-check</v-icon></template>
+                          <v-list-item-title>Check Mark</v-list-item-title>
+                       </v-list-item>
+                       <v-list-item @click="setShapeTool('cross')" :active="shapeType === 'cross'">
+                          <template v-slot:prepend><v-icon>mdi-close</v-icon></template>
+                          <v-list-item-title>Cross (X)</v-list-item-title>
+                       </v-list-item>
+                       <v-list-item @click="setShapeTool('circle')" :active="shapeType === 'circle'">
+                          <template v-slot:prepend><v-icon>mdi-circle</v-icon></template>
+                          <v-list-item-title>Black Circle</v-list-item-title>
+                       </v-list-item>
+                    </v-list>
+                  </v-menu>
+                </div>
+                
+                <v-spacer></v-spacer>
 
-        <template v-if="['sign', 'text', 'whiteout', 'shape', 'highlight', 'strikeout', 'underline', 'redact', 'watermark'].includes(tool)">
-          <v-btn color="error" variant="text" size="small" @click="resetCurrentPage" class="mr-2" icon title="Reset Page">
-            <v-icon>mdi-refresh</v-icon>
-          </v-btn>
-          <v-btn color="success" variant="flat" @click="saveSignature" prepend-icon="mdi-download" class="text-none">
-            Download
-          </v-btn>
-        </template>
-      </v-toolbar>
+                <!-- Page Navigation -->
+                <div class="d-flex align-center mx-2 text-grey-darken-1">
+                    <v-btn icon size="small" variant="text" @click="prevPage" :disabled="pageNum <= 1">
+                      <v-icon>mdi-chevron-left</v-icon>
+                    </v-btn>
+                    <span class="mx-2 text-caption font-weight-medium">Page {{ pageNum }} / {{ numPages }}</span>
+                    <v-btn icon size="small" variant="text" @click="nextPage" :disabled="pageNum >= numPages">
+                      <v-icon>mdi-chevron-right</v-icon>
+                    </v-btn>
+                </div>
 
-      <!-- Canvas Container -->
-      <div class="canvas-wrapper bg-white border-black" ref="canvasWrapper"
-           @click="handleCanvasClick"
-           @mousedown="handleCanvasMouseDown"
-      >
+                <v-divider vertical class="mx-2 my-4"></v-divider>
+
+                <!-- History Controls -->
+                <v-btn icon size="small" variant="text" @click="undo" :disabled="historyIndex <= 0" title="Undo">
+                  <v-icon>mdi-undo</v-icon>
+                </v-btn>
+                <v-btn icon size="small" variant="text" @click="redo" :disabled="historyIndex >= history.length - 1" title="Redo">
+                  <v-icon>mdi-redo</v-icon>
+                </v-btn>
+                
+                <v-divider vertical class="mx-2 my-4"></v-divider>
+
+                <template v-if="['sign', 'text', 'whiteout', 'shape', 'highlight', 'strikeout', 'underline', 'redact', 'watermark'].includes(tool)">
+                  <v-btn color="error" variant="text" size="small" @click="resetCurrentPage" class="mr-2" icon title="Reset Page">
+                    <v-icon>mdi-refresh</v-icon>
+                  </v-btn>
+                  <v-btn color="success" variant="flat" @click="saveSignature" prepend-icon="mdi-download" class="text-none">
+                    Download
+                  </v-btn>
+                </template>
+              </v-toolbar>
+
+              <!-- Canvas Scroll Area -->
+              <div class="d-flex justify-center flex-grow-1 overflow-auto bg-grey-lighten-4 py-8">
+                  <!-- Canvas Container -->
+                  <div class="canvas-wrapper bg-white border-black" ref="canvasWrapper"
+                       :class="{ 'cursor-crosshair': isPlacingTable }"
+                       @click="handleCanvasClick"
+                       @mousedown="handleCanvasMouseDown"
+                  >
         <canvas ref="pdfCanvas" class="pdf-canvas"></canvas>
         <canvas 
           ref="signCanvas" 
@@ -417,6 +495,46 @@
           </div>
         </div>
 
+        <!-- Tables Layer -->
+        <div class="table-layer" :class="{ 'pointer-events-none': tool !== 'table' }">
+          <div v-for="tbl in (tables[pageNum] || [])" :key="tbl.id"
+               class="table-element"
+               :class="{ 'is-selected': selectedTableId === tbl.id }"
+               :style="{ 
+                 left: tbl.x + 'px', 
+                 top: tbl.y + 'px', 
+                 width: tbl.width + 'px', 
+                 height: tbl.height + 'px'
+               }"
+               @mousedown.stop="startDragTable($event, tbl)"
+               @click.stop="selectedTableId = tbl.id">
+               
+               <table style="width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed;">
+                 <tr v-for="(row, rIndex) in tbl.rows" :key="rIndex">
+                   <td v-for="(col, cIndex) in tbl.cols" :key="cIndex" 
+                       style="border: 1px solid black; padding: 0;">
+                       <input v-model="tbl.cellData[rIndex][cIndex]" 
+                              style="width: 100%; height: 100%; border: none; padding: 4px; background: transparent; outline: none;"
+                              @mousedown.stop="selectedTableId = tbl.id"
+                              @focus="selectedTableId = tbl.id"
+                              @blur="pushToHistory"
+                       />
+                   </td>
+                 </tr>
+               </table>
+
+               <div v-if="selectedTableId === tbl.id" class="table-controls">
+                 <!-- Move Handle -->
+                 <div class="move-handle-table" @mousedown.stop="startDragTable($event, tbl)">
+                     <v-icon icon="mdi-drag" size="small" color="white"></v-icon>
+                 </div>
+                 
+                 <div class="resize-handle" @mousedown.stop="startResizeTable($event, tbl)"></div>
+                 <v-icon icon="mdi-close-circle" color="error" class="delete-btn-table" @click.stop="deleteTable(tbl)"></v-icon>
+               </div>
+          </div>
+        </div>
+
         <!-- Images Layer -->
         <div class="image-layer">
           <div v-for="img in (images[pageNum] || [])" :key="img.id"
@@ -606,7 +724,10 @@
         </div>
       </div>
     </div>
-  </v-container>
+    </div>
+    </div>
+  </div>
+</div>
 
   <v-dialog v-model="showWatermarkDialog" max-width="400">
       <v-card>
@@ -624,6 +745,43 @@
               <v-btn color="error" variant="text" @click="removeWatermark">Remove</v-btn>
               <v-btn color="primary" @click="applyWatermark">Apply</v-btn>
           </v-card-actions>
+      </v-card>
+  </v-dialog>
+
+  <v-dialog v-model="showTableDialog" max-width="340">
+      <v-card class="rounded-lg elevation-4">
+        <v-card-title class="text-subtitle-1 font-weight-bold pt-4 px-4">Insert Table</v-card-title>
+        <v-card-text class="px-4 py-2">
+          <div class="d-flex flex-column align-center">
+             <!-- Grid Selector -->
+             <div class="d-flex justify-space-between w-100 mb-2 align-center">
+                <span class="text-caption text-grey-darken-1">Size: {{ tableConfig.rows }} x {{ tableConfig.cols }}</span>
+             </div>
+             
+             <div class="table-grid-selector mb-4" @mouseleave="resetGridHover">
+                 <div v-for="r in 10" :key="r" class="d-flex">
+                     <div v-for="c in 10" :key="c" 
+                          class="grid-cell"
+                          :class="{ 'active': r <= tableConfig.rows && c <= tableConfig.cols }"
+                          @mouseover="hoverGrid(r, c)"
+                          @click="confirmTableSize">
+                     </div>
+                 </div>
+             </div>
+
+             <!-- Manual Input Fallback -->
+             <div class="d-flex align-center w-100 gap-2">
+                 <v-text-field v-model.number="tableConfig.rows" label="Rows" type="number" min="1" max="20" density="compact" variant="outlined" hide-details class="mr-2"></v-text-field>
+                 <span class="text-h6 text-grey-lighten-1">×</span>
+                 <v-text-field v-model.number="tableConfig.cols" label="Cols" type="number" min="1" max="20" density="compact" variant="outlined" hide-details class="ml-2"></v-text-field>
+             </div>
+          </div>
+        </v-card-text>
+        <v-card-actions class="px-4 pb-4 pt-2">
+          <v-spacer></v-spacer>
+          <v-btn color="grey-darken-1" variant="text" @click="showTableDialog = false" class="text-none">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" @click="confirmTableSize" class="text-none px-6">Place Table</v-btn>
+        </v-card-actions>
       </v-card>
   </v-dialog>
 </template>
@@ -663,7 +821,252 @@ const signCanvas = ref(null)
 const imageInput = ref(null)
 const canvasWrapper = ref(null)
 const tool = ref('view')
-const signatures = ref({}) // Store full-page signatures (deprecated/legacy)
+const tables = ref({}) // Store tables per page: { pageNum: [{ id, x, y, rows, cols, cellData, width, height }] }
+const showTableDialog = ref(false)
+const tableConfig = ref({ rows: 3, cols: 3 })
+const selectedTableId = ref(null)
+const draggingTableId = ref(null)
+const resizingTableId = ref(null)
+const initialTableState = ref(null)
+
+const isPlacingTable = ref(false)
+const draggedFormElement = ref(null)
+
+const isFormMode = ref(false)
+
+const formElements = [
+    { label: 'Signature', icon: 'mdi-draw', name: 'signature' },
+    { label: 'Text', icon: 'mdi-format-text', name: 'text' },
+    { label: 'Date', icon: 'mdi-calendar', name: 'date' },
+    { label: 'Initials', icon: 'mdi-signature-text', name: 'initials' },
+    { label: 'Name', icon: 'mdi-account-box-outline', name: 'name' },
+    { label: 'Email', icon: 'mdi-email-outline', name: 'email' },
+    { label: 'Checkbox', icon: 'mdi-checkbox-marked-outline', name: 'checkbox' },
+    { label: 'Radio button', icon: 'mdi-radiobox-marked', name: 'radio' },
+    { label: 'Image', icon: 'mdi-image-outline', name: 'image' },
+    { label: 'Dropdown', icon: 'mdi-form-dropdown', name: 'dropdown' },
+    { label: 'Number', icon: 'mdi-pound', name: 'number' },
+    { label: 'Formula', icon: 'mdi-function-variant', name: 'formula' },
+    { label: 'USD', icon: 'mdi-currency-usd', name: 'usd' },
+    { label: 'EUR', icon: 'mdi-currency-eur', name: 'eur' },
+    { label: 'Title', icon: 'mdi-account-tie', name: 'title' },
+    { label: 'Company', icon: 'mdi-domain', name: 'company' },
+    { label: 'ZIP code', icon: 'mdi-mailbox', name: 'zip' },
+    { label: 'US phone number', icon: 'mdi-cellphone', name: 'phone' },
+    { label: 'EIN', icon: 'mdi-card-account-details', name: 'ein' },
+    { label: 'SSN', icon: 'mdi-bank', name: 'ssn' },
+    { label: 'Age', icon: 'mdi-cake-variant', name: 'age' },
+    { label: 'Gender', icon: 'mdi-gender-male-female', name: 'gender' },
+    { label: 'US states', icon: 'mdi-flag', name: 'states' },
+]
+
+const startDragFormElement = (e, item) => {
+    draggedFormElement.value = item
+    // Prevent default drag ghost if we want custom behavior, or let it be
+    // e.preventDefault() // If we prevent default, we need to handle drag manually via mousemove
+    // For now let's use simple logic: set state, then on mouseup on canvas check state
+    
+    window.addEventListener('mouseup', handleFormElementDrop)
+}
+
+const handleFormElementDrop = (e) => {
+    window.removeEventListener('mouseup', handleFormElementDrop)
+    if (!draggedFormElement.value) return
+    
+    // Check if drop is within canvas
+    const rect = canvasWrapper.value.getBoundingClientRect()
+    if (
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom
+    ) {
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+        addFormElementAt(draggedFormElement.value, x, y)
+    }
+    
+    draggedFormElement.value = null
+}
+
+const addFormElementAt = (item, x, y) => {
+    if (item.name === 'signature') {
+        // Add signature field placeholder
+        const width = 150
+        const height = 60
+        const newSig = {
+            id: Date.now(),
+            x: x - width/2,
+            y: y - height/2,
+            width: width,
+            height: height,
+            dataUrl: '', // Empty initially
+            isPlaceholder: true // Mark as form field
+        }
+        if (!signatureObjects.value[pageNum.value]) signatureObjects.value[pageNum.value] = []
+        signatureObjects.value[pageNum.value].push(newSig)
+        pushToHistory()
+    } else if (item.name === 'text' || item.name === 'name' || item.name === 'email' || item.name === 'date' || item.name === 'initials') {
+        // Add text field
+        const newText = {
+            id: Date.now(),
+            x: x,
+            y: y,
+            text: item.label, // Default text
+            fontSize: 16,
+            color: '#000000',
+            fontFamily: 'Helvetica',
+            isBold: false,
+            isItalic: false,
+            isFormField: true // Mark as form field
+        }
+        if (!texts.value[pageNum.value]) texts.value[pageNum.value] = []
+        texts.value[pageNum.value].push(newText)
+        editingTextId.value = newText.id
+    } else if (item.name === 'checkbox') {
+        const newShape = {
+            id: Date.now(),
+            x: x - 10,
+            y: y - 10,
+            width: 20,
+            height: 20,
+            type: 'checkbox'
+        }
+        if (!shapes.value[pageNum.value]) shapes.value[pageNum.value] = []
+        shapes.value[pageNum.value].push(newShape)
+        pushToHistory()
+    } else if (item.name === 'radio') {
+        const newShape = {
+            id: Date.now(),
+            x: x - 10,
+            y: y - 10,
+            width: 20,
+            height: 20,
+            type: 'radio'
+        }
+        if (!shapes.value[pageNum.value]) shapes.value[pageNum.value] = []
+        shapes.value[pageNum.value].push(newShape)
+        pushToHistory()
+    } else {
+        // Default text for others
+        const newText = {
+            id: Date.now(),
+            x: x,
+            y: y,
+            text: item.label,
+            fontSize: 16,
+            color: '#000000',
+            fontFamily: 'Helvetica',
+            isBold: false,
+            isItalic: false,
+            isFormField: true
+        }
+        if (!texts.value[pageNum.value]) texts.value[pageNum.value] = []
+        texts.value[pageNum.value].push(newText)
+        editingTextId.value = newText.id
+    }
+}
+
+const addFormElement = (item) => {
+    // Logic for adding form element on click (e.g. center of screen or next available position)
+    // For now, we can just start drag or place at center.
+    // Let's place at center of current viewport.
+    const viewport = viewportSize.value
+    const x = (viewport.width / 2) - 50
+    const y = (viewport.height / 2) - 15
+    addFormElementAt(item, Math.max(0, x), Math.max(0, y))
+}
+
+const openTableDialog = () => {
+    showTableDialog.value = true
+}
+
+const hoverGrid = (r, c) => {
+    tableConfig.value.rows = r
+    tableConfig.value.cols = c
+}
+
+const resetGridHover = () => {
+    // Optional: reset to default
+}
+
+const confirmTableSize = () => {
+    showTableDialog.value = false
+    isPlacingTable.value = true
+}
+
+const createTableAt = (x, y) => {
+    const rows = Math.max(1, tableConfig.value.rows)
+    const cols = Math.max(1, tableConfig.value.cols)
+    
+    const width = Math.min(500, cols * 100)
+    const height = rows * 40
+    
+    // Initialize cell data
+    const cellData = Array(rows).fill().map(() => Array(cols).fill(''))
+    
+    const newTable = {
+        id: Date.now(),
+        x: Math.max(0, x),
+        y: Math.max(0, y),
+        width: width,
+        height: height,
+        rows: rows,
+        cols: cols,
+        cellData: cellData
+    }
+    
+    if (!tables.value[pageNum.value]) {
+        tables.value[pageNum.value] = []
+    }
+    // Use spread for reactivity
+    tables.value[pageNum.value] = [...tables.value[pageNum.value], newTable]
+    
+    // Select the new table
+    selectedTableId.value = newTable.id
+    
+    pushToHistory()
+}
+
+const startDragTable = (e, table) => {
+    if (tool.value !== 'table') return
+    
+    // If clicking on an input, don't drag
+    if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return
+
+    selectedTableId.value = table.id
+    draggingTableId.value = table.id
+    
+    const rect = canvasWrapper.value.getBoundingClientRect()
+    dragOffset.value = {
+        x: e.clientX - rect.left - table.x,
+        y: e.clientY - rect.top - table.y
+    }
+    
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+}
+
+const startResizeTable = (e, table) => {
+    if (tool.value !== 'table') return
+    
+    resizingTableId.value = table.id
+    initialTableState.value = { ...table }
+    startMousePos.value = { x: e.clientX, y: e.clientY }
+    
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+}
+
+const deleteTable = (table) => {
+    const idx = tables.value[pageNum.value].indexOf(table)
+    if (idx > -1) {
+        tables.value[pageNum.value].splice(idx, 1)
+        pushToHistory()
+    }
+}
+
+const signatures = ref({}) // Store full page signatures per page: { pageNum: dataUrl }
 const signatureObjects = ref({}) // Store individual signature objects per page: { pageNum: [{ id, x, y, width, height, dataUrl }] }
 const images = ref({}) // Store images per page: { pageNum: [{ id, x, y, width, height, dataUrl }] }
 const drawings = ref({}) // Store drawings per page: { pageNum: [{ id, type, x1, y1, x2, y2, path, points, color, strokeWidth }] }
@@ -814,6 +1217,7 @@ const pushToHistory = () => {
         whiteouts: JSON.parse(JSON.stringify(whiteouts.value)),
         redacts: JSON.parse(JSON.stringify(redacts.value)),
         shapes: JSON.parse(JSON.stringify(shapes.value)),
+        tables: JSON.parse(JSON.stringify(tables.value)),
         highlights: JSON.parse(JSON.stringify(highlights.value)),
         strikeouts: JSON.parse(JSON.stringify(strikeouts.value)),
         underlines: JSON.parse(JSON.stringify(underlines.value)),
@@ -871,6 +1275,7 @@ const restoreState = (state) => {
     whiteouts.value = JSON.parse(JSON.stringify(state.whiteouts))
     redacts.value = JSON.parse(JSON.stringify(state.redacts || {}))
     shapes.value = JSON.parse(JSON.stringify(state.shapes))
+    tables.value = JSON.parse(JSON.stringify(state.tables || {}))
     highlights.value = JSON.parse(JSON.stringify(state.highlights))
     strikeouts.value = JSON.parse(JSON.stringify(state.strikeouts || {})) // Handle old history without strikeouts
     underlines.value = JSON.parse(JSON.stringify(state.underlines || {})) // Handle old history without underlines
@@ -1064,7 +1469,7 @@ const handleCanvasMouseDown = (e) => {
 
 const handleCanvasClick = (e) => {
   if (tool.value === 'whiteout' || tool.value === 'redact' || tool.value === 'highlight' || tool.value === 'strikeout' || tool.value === 'underline') return // Handled by mousedown/up
-  if (draggingTextId.value || editingTextId.value || draggingShapeId.value || resizingShapeId.value || draggingSignatureId.value || resizingSignatureId.value || draggingImageId.value || resizingImageId.value) return
+  if (draggingTextId.value || editingTextId.value || draggingShapeId.value || resizingShapeId.value || draggingSignatureId.value || resizingSignatureId.value || draggingImageId.value || resizingImageId.value || draggingTableId.value || resizingTableId.value) return
 
   const rect = canvasWrapper.value.getBoundingClientRect()
   const x = e.clientX - rect.left
@@ -1090,7 +1495,7 @@ const handleCanvasClick = (e) => {
       }
   }
 
-  if (tool.value !== 'text' && tool.value !== 'shape' && tool.value !== 'sign' && tool.value !== 'draw') return
+  if (tool.value !== 'text' && tool.value !== 'shape' && tool.value !== 'sign' && tool.value !== 'draw' && tool.value !== 'table') return
   
   if (tool.value === 'sign') {
       // If we are in sign tool, clicking should deselect any selected signature unless we clicked on one
@@ -1117,6 +1522,19 @@ const handleCanvasClick = (e) => {
       shapes.value[pageNum.value].push(newShape)
       selectedShapeId.value = newShape.id // Select newly created shape
       pushToHistory()
+      return
+  }
+
+  if (tool.value === 'table') {
+      if (isPlacingTable.value) {
+          const rect = canvasWrapper.value.getBoundingClientRect()
+          const x = e.clientX - rect.left
+          const y = e.clientY - rect.top
+          createTableAt(x, y)
+          isPlacingTable.value = false
+          return
+      }
+      selectedTableId.value = null
       return
   }
 
@@ -1345,21 +1763,52 @@ const handleWindowMouseMove = (e) => {
            img.y = newY
        }
    } else if (resizingImageId.value) {
-       const img = images.value[pageNum.value].find(i => i.id === resizingImageId.value)
-       if (img && initialImageState.value) {
-           const mouseX = e.clientX
-           const deltaX = mouseX - startMousePos.value.x
-           
-           // Maintain aspect ratio
-           const ratio = initialImageState.value.width / initialImageState.value.height
-           
-           const newWidth = Math.max(20, initialImageState.value.width + deltaX)
-           const newHeight = newWidth / ratio
-           
-           img.width = newWidth
-       img.height = newHeight
-   }
-} else if (isDrawingDraw.value) {
+      const img = images.value[pageNum.value].find(i => i.id === resizingImageId.value)
+      if (img && initialImageState.value) {
+          const mouseX = e.clientX
+          const deltaX = mouseX - startMousePos.value.x
+          
+          // Maintain aspect ratio
+          const ratio = initialImageState.value.width / initialImageState.value.height
+          
+          const newWidth = Math.max(20, initialImageState.value.width + deltaX)
+          const newHeight = newWidth / ratio
+          
+          img.width = newWidth
+          img.height = newHeight
+      }
+  } else if (draggingTableId.value) {
+      const rect = canvasWrapper.value.getBoundingClientRect()
+      const tbl = tables.value[pageNum.value].find(t => t.id === draggingTableId.value)
+      if (tbl) {
+          let newX = e.clientX - rect.left - dragOffset.value.x
+          let newY = e.clientY - rect.top - dragOffset.value.y
+          
+          const viewport = viewportSize.value
+          if (newX < 0) newX = 0
+          if (newY < 0) newY = 0
+          if (viewport.width && newX > viewport.width - tbl.width) newX = viewport.width - tbl.width
+          if (viewport.height && newY > viewport.height - tbl.height) newY = viewport.height - tbl.height
+          
+          tbl.x = newX
+          tbl.y = newY
+      }
+  } else if (resizingTableId.value) {
+      const tbl = tables.value[pageNum.value].find(t => t.id === resizingTableId.value)
+      if (tbl && initialTableState.value) {
+          const mouseX = e.clientX
+          const mouseY = e.clientY
+          
+          const deltaX = mouseX - startMousePos.value.x
+          const deltaY = mouseY - startMousePos.value.y
+          
+          const newWidth = Math.max(50, initialTableState.value.width + deltaX)
+          const newHeight = Math.max(30, initialTableState.value.height + deltaY)
+          
+          tbl.width = newWidth
+          tbl.height = newHeight
+      }
+  } else if (isDrawingDraw.value) {
    const rect = canvasWrapper.value.getBoundingClientRect()
    const currentX = e.clientX - rect.left
    const currentY = e.clientY - rect.top
@@ -1559,9 +2008,14 @@ const handleWindowMouseUp = () => {
       } else if (draggingImageId.value) {
         draggingImageId.value = null
       } else if (resizingImageId.value) {
-        resizingImageId.value = null
-        initialImageState.value = null
-      }
+      resizingImageId.value = null
+      initialImageState.value = null
+  } else if (draggingTableId.value) {
+      draggingTableId.value = null
+  } else if (resizingTableId.value) {
+      resizingTableId.value = null
+      initialTableState.value = null
+  }
   }
   
   window.removeEventListener('mousemove', handleWindowMouseMove)
@@ -1879,6 +2333,8 @@ const resetCurrentPage = () => {
         if (strikeouts.value[current]) strikeouts.value[current] = []
     } else if (tool.value === 'shape') {
         if (shapes.value[current]) shapes.value[current] = []
+    } else if (tool.value === 'table') {
+        if (tables.value[current]) tables.value[current] = []
     } else if (tool.value === 'watermark') {
         watermark.value = null
     }
@@ -2112,6 +2568,68 @@ const saveSignature = async () => {
                 })
             }
         }
+      }
+
+      // 3c. Embed Tables
+      const pageTables = tables.value[pNum]
+      if (pageTables && pageTables.length > 0) {
+          for (const tbl of pageTables) {
+              const x = tbl.x / scale.value
+              const y = height - (tbl.y / scale.value) - (tbl.height / scale.value)
+              const w = tbl.width / scale.value
+              const h = tbl.height / scale.value
+              
+              const rowHeight = h / tbl.rows
+              const colWidth = w / tbl.cols
+              
+              // Draw Grid
+              // Vertical lines
+              for (let c = 0; c <= tbl.cols; c++) {
+                  page.drawLine({
+                      start: { x: x + (c * colWidth), y: y },
+                      end: { x: x + (c * colWidth), y: y + h },
+                      thickness: 1,
+                      color: rgb(0, 0, 0),
+                  })
+              }
+              // Horizontal lines
+              for (let r = 0; r <= tbl.rows; r++) {
+                  page.drawLine({
+                      start: { x: x, y: y + (r * rowHeight) },
+                      end: { x: x + w, y: y + (r * rowHeight) },
+                      thickness: 1,
+                      color: rgb(0, 0, 0),
+                  })
+              }
+              
+              // Draw Text
+              const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+              const fontSize = 10 // Fixed for now
+              
+              for (let r = 0; r < tbl.rows; r++) {
+                  for (let c = 0; c < tbl.cols; c++) {
+                      const text = tbl.cellData[r][c]
+                      if (text) {
+                          // PDF coords are bottom-up, so row 0 is at the top (y + h)
+                          // Cell Y center: y + h - (r * rowHeight) - (rowHeight / 2)
+                          // Text Y (baseline): approximate adjustment
+                          const cellX = x + (c * colWidth) + 2 // Padding
+                          // Adjusted Y: y + h - (r * rowHeight) is the TOP of the cell.
+                          // We want to go down by rowHeight/2 for center, then down by fontSize/3 for baseline.
+                          const cellY = (y + h) - (r * rowHeight) - (rowHeight / 2) - (fontSize / 3)
+                          
+                          page.drawText(text, {
+                              x: cellX,
+                              y: cellY,
+                              size: fontSize,
+                              font: font,
+                              color: rgb(0, 0, 0),
+                              maxWidth: colWidth - 4
+                          })
+                      }
+                  }
+              }
+          }
       }
 
       // 3b. Embed Drawings (Pencil, Line, Arrow, Polygon)
@@ -2396,6 +2914,65 @@ const downloadBlob = (data, fileName, mimeType) => {
     border-radius: 50%;
     pointer-events: auto;
     transform: translate(-50%, -50%);
+  }
+
+  .delete-btn-table {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    pointer-events: auto;
+  }
+
+  .table-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 34; /* Same level as images */
+    pointer-events: none;
+  }
+
+  .table-element {
+    position: absolute;
+    cursor: move;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px dashed transparent;
+    pointer-events: auto;
+  }
+
+  .table-element.is-selected {
+    border: 1px dashed #2196F3;
+  }
+
+  .table-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #2196F3;
+    pointer-events: none;
+  }
+
+  .move-handle-table {
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 24px;
+    background: #2196F3;
+    cursor: move;
+    border-radius: 4px 4px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    z-index: 35;
   }
 
   .image-layer {
@@ -2842,5 +3419,45 @@ const downloadBlob = (data, fileName, mimeType) => {
     white-space: nowrap;
     font-weight: bold;
     user-select: none;
+  }
+
+  .tool-item {
+    transition: background-color 0.2s;
+  }
+  
+  .tool-item:hover {
+    background-color: #F5F5F5; /* grey-lighten-4 */
+  }
+
+  .table-grid-selector {
+    border: 1px solid #e0e0e0;
+    padding: 4px;
+    border-radius: 4px;
+    background: #FAFAFA;
+  }
+  .grid-cell {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #e0e0e0;
+    margin: 1px;
+    cursor: pointer;
+    background: white;
+    transition: all 0.1s;
+  }
+  .grid-cell.active {
+    background: #E3F2FD; /* blue-lighten-5 */
+    border-color: #2196F3;
+  }
+  
+  .cursor-crosshair {
+      cursor: crosshair !important;
+  }
+  .form-element-card {
+    transition: all 0.2s;
+    border: 1px solid #ffe0b2 !important;
+  }
+  .form-element-card:hover {
+    background-color: #FFF3E0 !important; /* orange-lighten-5 darken slightly */
+    border-color: #FFB74D !important;
   }
 </style>

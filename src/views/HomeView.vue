@@ -3,10 +3,10 @@
     <!-- Hero Text Section (Original) -->
     <div class="text-center mb-10 mt-10">
       <h1 class="text-h3 text-md-h2 font-weight-black mb-4">
-        Millions of people trust us with their PDFs
+        Your reliable solution for all PDF needs.
       </h1>
       <p class="text-h6 text-grey-darken-1">
-        Edit, collaborate, and eSign documents — all with one comprehensive solution.
+        One solution to edit, collaborate, and eSign your documents.
       </p>
     </div>
 
@@ -16,7 +16,7 @@
       flat
       border
       class="upload-area w-100 d-flex flex-column align-center justify-center py-10 px-4 mb-10"
-      max-width="1000"
+      max-width="100%"
       @click="triggerFileInput"
       @drop.prevent="handleDrop"
       @dragover.prevent
@@ -373,7 +373,7 @@
                          <!-- Mock Signature Placement -->
                          <div class="position-absolute" style="bottom: 80px; left: 60px;">
                             <div class="border-dashed border-primary bg-yellow-lighten-5 px-4 py-2 text-h5 font-italic" style="border-width: 2px !important; color: black; font-family: cursive;">
-                                Hanna S.
+                                Jerry K.
                                 <div class="position-absolute bg-white rounded-circle border border-primary" style="width: 10px; height: 10px; top: -5px; right: -5px;"></div>
                             </div>
                          </div>
@@ -389,7 +389,7 @@
                    </div>
                    <div class="pa-4 bg-grey-lighten-5">
                       <v-text-field
-                        model-value="Hanna S"
+                        model-value="Jerry K"
                         variant="outlined"
                         density="compact"
                         bg-color="white"
@@ -398,7 +398,7 @@
                         color="primary"
                       ></v-text-field>
                       <div class="text-h4 text-center font-italic py-2 text-black" style="font-family: cursive;">
-                         Hanna S.
+                         Jerry K.
                       </div>
                    </div>
                 </v-card>
@@ -534,6 +534,72 @@
         </v-timeline>
       </div>
     </v-container>
+
+    <!-- Footer Section -->
+    <div class="bg-black py-12 rounded-xl mx-4 mb-4">
+      <v-container>
+        <v-row>
+          <v-col cols="12" md="4">
+            <div class="text-h5 font-weight-bold text-white mb-4">PDF Editor</div>
+            <p class="text-grey-lighten-1 text-body-2 mb-6" style="max-width: 300px;">
+              The smartest way to manage your documents. Secure, fast, and easy to use.
+            </p>
+            <div class="d-flex gap-4">
+              <v-btn icon="mdi-facebook" variant="text" color="grey-lighten-1" size="small"></v-btn>
+              <v-btn icon="mdi-twitter" variant="text" color="grey-lighten-1" size="small"></v-btn>
+              <v-btn icon="mdi-instagram" variant="text" color="grey-lighten-1" size="small"></v-btn>
+              <v-btn icon="mdi-linkedin" variant="text" color="grey-lighten-1" size="small"></v-btn>
+            </div>
+          </v-col>
+          
+          <v-col cols="6" md="2">
+            <div class="text-subtitle-1 font-weight-bold text-white mb-4">Product</div>
+            <div class="d-flex flex-column gap-2">
+              <a href="#" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Features</a>
+              <a href="#" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Pricing</a>
+            </div>
+          </v-col>
+          
+          <v-col cols="6" md="2">
+            <div class="text-subtitle-1 font-weight-bold text-white mb-4">Support</div>
+            <div class="d-flex flex-column gap-2">
+              <a href="mailto:moraswip97@gmail.com" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Help Center</a>
+              <a href="mailto:moraswip97@gmail.com" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Contact Us</a>
+              <a href="#" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Status</a>
+            </div>
+          </v-col>
+          
+          <v-col cols="12" md="4">
+            <div class="text-subtitle-1 font-weight-bold text-white mb-4">Subscribe</div>
+            <p class="text-grey-lighten-1 text-body-2 mb-4">
+              Subscribe to our newsletter for the latest updates.
+            </p>
+            <v-text-field
+              placeholder="Email address"
+              variant="outlined"
+              density="compact"
+              bg-color="grey-darken-4"
+              color="white"
+              hide-details
+              rounded="lg"
+            >
+              <template v-slot:append-inner>
+                <v-btn size="small" color="orange-darken-1" class="text-white" icon="mdi-arrow-right" variant="flat"></v-btn>
+              </template>
+            </v-text-field>
+          </v-col>
+        </v-row>
+        
+        <v-divider class="my-8 border-opacity-25" color="grey-lighten-1"></v-divider>
+        
+        <div class="d-flex flex-column flex-md-row justify-space-between align-center text-caption text-grey-darken-1">
+          <div class="mb-2 mb-md-0">
+            © 2026 PDF Editor. All rights reserved.
+          </div>
+  
+        </div>
+      </v-container>
+    </div>
     
     <!-- Shared Hidden Inputs -->
     <input
@@ -696,7 +762,6 @@ import { ref } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { PDFDocument } from 'pdf-lib'
-import { PDFDocument as PDFDocumentEncrypt } from 'pdf-lib-with-encrypt'
 import * as pdfjsLib from 'pdfjs-dist'
 
 // Set worker source
@@ -1091,22 +1156,22 @@ const protectPdf = async () => {
 
   try {
     const arrayBuffer = await selectedFile.value.arrayBuffer()
-    const pdfDoc = await PDFDocumentEncrypt.load(arrayBuffer)
+    const pdfDoc = await PDFDocument.load(arrayBuffer)
     
-    console.log('PDFDocument loaded:', pdfDoc)
-    console.log('Available methods:', Object.getPrototypeOf(pdfDoc))
-    
-    if (typeof pdfDoc.encrypt !== 'function') {
-        throw new Error('Encryption is not supported by this version of pdf-lib or the document is invalid.')
-    }
-
-    // Encrypt the PDF
-    pdfDoc.encrypt({
+    // Encrypt via save options
+    const pdfBytes = await pdfDoc.save({
       userPassword: password.value,
       ownerPassword: password.value,
+      permissions: {
+        printing: 'highResolution',
+        modifying: false,
+        copying: false,
+        annotating: false,
+        fillingForms: false,
+        contentAccessibility: false,
+        documentAssembly: false,
+      }
     })
-
-    const pdfBytes = await pdfDoc.save()
     
     // Download
     const blob = new Blob([pdfBytes], { type: 'application/pdf' })
@@ -1158,15 +1223,10 @@ const formatFileSize = (bytes) => {
 
 <style scoped>
 .upload-area {
-  border: 2px dashed #e0e0e0 !important;
-  background-color: #ffffff;
+  border: 2px dashed #fb8c00 !important;
+  background-color: #fffbf5;
   border-radius: 8px;
-  transition: all 0.3s ease;
   cursor: pointer;
 }
 
-.upload-area:hover {
-  border-color: #fb8c00 !important; /* Orange border on hover */
-  background-color: #fffbf5; /* Light orange tint on hover */
-}
 </style>
