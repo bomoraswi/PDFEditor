@@ -1,56 +1,129 @@
 <template>
-  <v-container class="fill-height d-flex flex-column align-center bg-grey-lighten-3" fluid>
+  <v-container class="fill-height d-flex flex-column align-center bg-white" fluid>
+    <!-- Signature Modal -->
+    <v-dialog v-model="showSignatureModal" max-width="500px">
+      <v-card>
+        <v-card-title>Create Signature</v-card-title>
+        <v-card-text>
+          <div style="border: 1px solid #ccc; background: #fff;">
+            <canvas ref="signaturePad" width="450" height="200" 
+                    @mousedown="startSignature" 
+                    @mousemove="drawSignature" 
+                    @mouseup="stopSignature"
+                    @mouseleave="stopSignature"
+                    style="cursor: crosshair; touch-action: none;">
+            </canvas>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="error" variant="text" @click="clearSignaturePad">Clear</v-btn>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="showSignatureModal = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" @click="saveSignatureFromModal">Add Signature</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <div v-if="!pdfDoc" class="text-center mt-10">
       <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
       <div class="mt-4 text-h6 text-grey-darken-1">Loading Document...</div>
     </div>
     
-    <div v-else class="d-flex flex-column align-center w-100 h-100" style="max-width: 1000px;">
+    <div v-else class="d-flex flex-column align-center w-100 h-100">
       <!-- Toolbar -->
-      <v-toolbar density="compact" class="mb-4 rounded-lg px-2" elevation="2" color="white">
-        <v-btn icon @click="router.push('/options')" title="Back to Options">
+      <v-toolbar density="compact" class="mb-4 rounded-lg px-2 border-b" elevation="0" color="white" height="80">
+        <v-btn icon @click="router.push('/options')" title="Back to Options" class="mr-2">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
         
-        <v-divider vertical class="mx-2"></v-divider>
+        <v-divider vertical class="mx-2 my-4"></v-divider>
 
-        <v-btn icon @click="prevPage" :disabled="pageNum <= 1">
-          <v-icon>mdi-chevron-left</v-icon>
-        </v-btn>
-        <span class="mx-4 text-body-2 font-weight-medium">Page {{ pageNum }} of {{ numPages }}</span>
-        <v-btn icon @click="nextPage" :disabled="pageNum >= numPages">
-          <v-icon>mdi-chevron-right</v-icon>
-        </v-btn>
-        
-        <v-divider vertical class="mx-2"></v-divider>
-        
-        <v-btn-toggle v-model="tool" mandatory density="compact" class="mx-2" color="primary" variant="outlined">
-          <v-btn value="view" size="small">
-            <v-icon start>mdi-eye</v-icon>
-            View
+        <v-btn-toggle v-model="tool" mandatory density="compact" class="mx-2 d-flex align-center" color="primary" variant="text" :divided="false">
+          <v-btn value="view" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
+            <v-icon size="24" class="mb-1">mdi-eye</v-icon>
+            <span class="text-caption text-capitalize">Read</span>
           </v-btn>
-          <v-btn value="sign" size="small">
-            <v-icon start>mdi-draw</v-icon>
-            Sign
+          
+          <v-btn value="sign" class="d-flex flex-column align-center justify-center py-2" height="64" width="80" @click="openSignatureModal">
+            <v-icon size="24" class="mb-1">mdi-draw</v-icon>
+            <span class="text-caption text-capitalize">Sign</span>
           </v-btn>
-          <v-btn value="text" size="small">
-            <v-icon start>mdi-format-text</v-icon>
-            Text
+          
+          <v-btn value="text" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
+            <v-icon size="24" class="mb-1">mdi-format-text</v-icon>
+            <span class="text-caption text-capitalize">Text</span>
           </v-btn>
-          <v-btn value="highlight" size="small">
-            <v-icon start>mdi-format-color-highlight</v-icon>
-            Highlight
+          
+          <v-btn value="highlight" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
+            <v-icon size="24" class="mb-1">mdi-format-color-highlight</v-icon>
+            <span class="text-caption text-capitalize">Highlight</span>
           </v-btn>
-          <v-btn value="whiteout" size="small">
-            <v-icon start>mdi-eraser-variant</v-icon>
-            Erase
+          
+          <v-btn value="strikeout" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
+            <v-icon size="24" class="mb-1">mdi-format-strikethrough</v-icon>
+            <span class="text-caption text-capitalize">Strike</span>
           </v-btn>
+          
+          <v-btn value="underline" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
+            <v-icon size="24" class="mb-1">mdi-format-underline</v-icon>
+            <span class="text-caption text-capitalize">Underline</span>
+          </v-btn>
+          
+          <v-btn value="whiteout" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
+            <v-icon size="24" class="mb-1">mdi-eraser-variant</v-icon>
+            <span class="text-caption text-capitalize">Whiteout</span>
+          </v-btn>
+          
+          <v-btn value="redact" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
+            <v-icon size="24" class="mb-1">mdi-eye-off</v-icon>
+            <span class="text-caption text-capitalize">Redact</span>
+          </v-btn>
+          
+          <v-btn value="image" class="d-flex flex-column align-center justify-center py-2" height="64" width="80" @click="triggerImageUpload">
+            <v-icon size="24" class="mb-1">mdi-image</v-icon>
+            <span class="text-caption text-capitalize">Image</span>
+          </v-btn>
+          <input type="file" ref="imageInput" accept="image/png, image/jpeg, image/jpg" style="display: none" @change="handleImageUpload">
+          
+          <v-btn value="watermark" class="d-flex flex-column align-center justify-center py-2" height="64" width="80" @click="openWatermarkDialog">
+            <v-icon size="24" class="mb-1">mdi-watermark</v-icon>
+            <span class="text-caption text-capitalize">Watermark</span>
+          </v-btn>
+
           <v-menu location="bottom">
             <template v-slot:activator="{ props }">
-               <v-btn value="shape" size="small" v-bind="props">
-                 <v-icon start>mdi-shape</v-icon>
-                 Shapes
-                 <v-icon end size="small">mdi-chevron-down</v-icon>
+               <v-btn value="draw" v-bind="props" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
+                 <v-icon size="24" class="mb-1">mdi-pencil</v-icon>
+                 <span class="text-caption text-capitalize">Draw</span>
+                 <v-icon size="x-small" class="mt-1">mdi-chevron-down</v-icon>
+               </v-btn>
+            </template>
+            <v-list density="compact">
+               <v-list-item @click="setDrawTool('pencil')" :active="drawType === 'pencil'">
+                  <template v-slot:prepend><v-icon>mdi-pencil</v-icon></template>
+                  <v-list-item-title>Pencil</v-list-item-title>
+               </v-list-item>
+               <v-list-item @click="setDrawTool('line')" :active="drawType === 'line'">
+                  <template v-slot:prepend><v-icon>mdi-minus</v-icon></template>
+                  <v-list-item-title>Line</v-list-item-title>
+               </v-list-item>
+               <v-list-item @click="setDrawTool('arrow')" :active="drawType === 'arrow'">
+                  <template v-slot:prepend><v-icon>mdi-arrow-right</v-icon></template>
+                  <v-list-item-title>Arrow</v-list-item-title>
+               </v-list-item>
+               <v-list-item @click="setDrawTool('polygon')" :active="drawType === 'polygon'">
+                  <template v-slot:prepend><v-icon>mdi-vector-polygon</v-icon></template>
+                  <v-list-item-title>Polygon</v-list-item-title>
+               </v-list-item>
+            </v-list>
+          </v-menu>
+
+          <v-menu location="bottom">
+            <template v-slot:activator="{ props }">
+               <v-btn value="shape" v-bind="props" class="d-flex flex-column align-center justify-center py-2" height="64" width="80">
+                 <v-icon size="24" class="mb-1">mdi-shape</v-icon>
+                 <span class="text-caption text-capitalize">Shape</span>
+                 <v-icon size="x-small" class="mt-1">mdi-chevron-down</v-icon>
                </v-btn>
             </template>
             <v-list density="compact">
@@ -80,6 +153,19 @@
         
         <v-spacer></v-spacer>
 
+        <!-- Page Navigation -->
+        <div class="d-flex align-center mx-2 text-grey-darken-1">
+            <v-btn icon size="small" variant="text" @click="prevPage" :disabled="pageNum <= 1">
+              <v-icon>mdi-chevron-left</v-icon>
+            </v-btn>
+            <span class="mx-2 text-caption font-weight-medium">Page {{ pageNum }} / {{ numPages }}</span>
+            <v-btn icon size="small" variant="text" @click="nextPage" :disabled="pageNum >= numPages">
+              <v-icon>mdi-chevron-right</v-icon>
+            </v-btn>
+        </div>
+
+        <v-divider vertical class="mx-2 my-4"></v-divider>
+
         <!-- History Controls -->
         <v-btn icon size="small" variant="text" @click="undo" :disabled="historyIndex <= 0" title="Undo">
           <v-icon>mdi-undo</v-icon>
@@ -88,20 +174,20 @@
           <v-icon>mdi-redo</v-icon>
         </v-btn>
         
-        <v-divider vertical class="mx-2"></v-divider>
+        <v-divider vertical class="mx-2 my-4"></v-divider>
 
-        <template v-if="tool === 'sign' || tool === 'text' || tool === 'whiteout' || tool === 'shape' || tool === 'highlight'">
-          <v-btn color="error" variant="text" @click="resetCurrentPage" class="mr-2" prepend-icon="mdi-refresh">
-            Reset Page
+        <template v-if="['sign', 'text', 'whiteout', 'shape', 'highlight', 'strikeout', 'underline', 'redact', 'watermark'].includes(tool)">
+          <v-btn color="error" variant="text" size="small" @click="resetCurrentPage" class="mr-2" icon title="Reset Page">
+            <v-icon>mdi-refresh</v-icon>
           </v-btn>
-          <v-btn color="success" variant="flat" @click="saveSignature" prepend-icon="mdi-download">
+          <v-btn color="success" variant="flat" @click="saveSignature" prepend-icon="mdi-download" class="text-none">
             Download
           </v-btn>
         </template>
       </v-toolbar>
 
       <!-- Canvas Container -->
-      <div class="canvas-wrapper elevation-4 bg-white" ref="canvasWrapper"
+      <div class="canvas-wrapper bg-white border-black" ref="canvasWrapper"
            @click="handleCanvasClick"
            @mousedown="handleCanvasMouseDown"
       >
@@ -147,6 +233,84 @@
            </div>
         </div>
 
+        <!-- Strikeout Layer -->
+        <div class="strikeout-layer" :class="{ 'pointer-events-none': tool !== 'strikeout' }">
+           <div v-for="s in (strikeouts[pageNum] || [])" :key="s.id"
+                class="strikeout-element"
+                :style="{ 
+                  left: s.x + 'px', 
+                  top: s.y + 'px', 
+                  width: s.width + 'px', 
+                  height: s.height + 'px' 
+                }">
+             <div class="strikeout-line"></div>
+             <v-icon v-if="tool === 'strikeout'" 
+                     icon="mdi-close-circle" 
+                     color="error" 
+                     size="x-small" 
+                     class="delete-btn-strikeout"
+                     @click.stop="deleteStrikeout(s)"
+             ></v-icon>
+           </div>
+           
+           <!-- Current drawing strikeout -->
+           <div v-if="isDrawingStrikeout"
+                class="strikeout-element drawing"
+                :style="{
+                  left: currentStrikeout.x + 'px',
+                  top: currentStrikeout.y + 'px',
+                  width: currentStrikeout.width + 'px',
+                  height: currentStrikeout.height + 'px'
+                }">
+                <div class="strikeout-line"></div>
+           </div>
+        </div>
+
+        <!-- Underline Layer -->
+        <div class="underline-layer" :class="{ 'pointer-events-none': tool !== 'underline' }">
+           <div v-for="u in (underlines[pageNum] || [])" :key="u.id"
+                class="underline-element"
+                :style="{ 
+                  left: u.x + 'px', 
+                  top: u.y + 'px', 
+                  width: u.width + 'px', 
+                  height: u.height + 'px' 
+                }">
+             <div class="underline-line"></div>
+             <v-icon v-if="tool === 'underline'" 
+                     icon="mdi-close-circle" 
+                     color="error" 
+                     size="x-small" 
+                     class="delete-btn-underline"
+                     @click.stop="deleteUnderline(u)"
+             ></v-icon>
+           </div>
+           
+           <!-- Current drawing underline -->
+           <div v-if="isDrawingUnderline"
+                class="underline-element drawing"
+                :style="{
+                  left: currentUnderline.x + 'px',
+                  top: currentUnderline.y + 'px',
+                  width: currentUnderline.width + 'px',
+                  height: currentUnderline.height + 'px'
+                }">
+                <div class="underline-line"></div>
+           </div>
+        </div>
+
+        <!-- Watermark Layer -->
+        <div class="watermark-layer" v-if="watermark">
+            <div class="watermark-element" :style="{
+                opacity: watermark.opacity,
+                transform: `translate(-50%, -50%) rotate(${watermark.rotation}deg)`,
+                fontSize: watermark.size + 'px',
+                color: watermark.color
+            }">
+                {{ watermark.text }}
+            </div>
+        </div>
+
         <!-- Whiteout Layer -->
         <div class="whiteout-layer" :class="{ 'pointer-events-none': tool !== 'whiteout' }">
            <div v-for="w in (whiteouts[pageNum] || [])" :key="w.id"
@@ -174,6 +338,37 @@
                   top: currentWhiteout.y + 'px',
                   width: currentWhiteout.width + 'px',
                   height: currentWhiteout.height + 'px'
+                }">
+           </div>
+        </div>
+
+        <!-- Redact Layer -->
+        <div class="redact-layer" :class="{ 'pointer-events-none': tool !== 'redact' }">
+           <div v-for="r in (redacts[pageNum] || [])" :key="r.id"
+                class="redact-element"
+                :style="{ 
+                  left: r.x + 'px', 
+                  top: r.y + 'px', 
+                  width: r.width + 'px', 
+                  height: r.height + 'px' 
+                }">
+             <v-icon v-if="tool === 'redact'" 
+                     icon="mdi-close-circle" 
+                     color="error" 
+                     size="x-small" 
+                     class="delete-btn-redact"
+                     @click.stop="deleteRedact(r)"
+             ></v-icon>
+           </div>
+           
+           <!-- Current drawing redact -->
+           <div v-if="isDrawingRedact"
+                class="redact-element drawing"
+                :style="{
+                  left: currentRedact.x + 'px',
+                  top: currentRedact.y + 'px',
+                  width: currentRedact.width + 'px',
+                  height: currentRedact.height + 'px'
                 }">
            </div>
         </div>
@@ -219,6 +414,96 @@
                     class="delete-btn-shape"
                     @click.stop="deleteShape(shape)"
             ></v-icon>
+          </div>
+        </div>
+
+        <!-- Images Layer -->
+        <div class="image-layer">
+          <div v-for="img in (images[pageNum] || [])" :key="img.id"
+               class="image-element"
+               :style="{ 
+                 left: img.x + 'px', 
+                 top: img.y + 'px', 
+                 width: img.width + 'px', 
+                 height: img.height + 'px'
+               }"
+               @mousedown.stop="startDragImage($event, img)">
+               <img :src="img.dataUrl" style="width: 100%; height: 100%; object-fit: contain;" />
+               <div v-if="selectedImageId === img.id" class="image-controls">
+                 <div class="resize-handle" @mousedown.stop="startResizeImage($event, img)"></div>
+                 <v-icon icon="mdi-close-circle" color="error" class="delete-btn-image" @click.stop="deleteImageObject(img)"></v-icon>
+               </div>
+          </div>
+        </div>
+
+        <!-- Drawings Layer (SVG) -->
+        <svg class="drawing-layer" :style="{ width: viewportSize.width + 'px', height: viewportSize.height + 'px' }" :class="{ 'pointer-events-none': tool !== 'draw' }">
+           <defs>
+             <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+               <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+             </marker>
+           </defs>
+           
+           <g v-for="d in (drawings[pageNum] || [])" :key="d.id" class="drawing-element" @click.stop="selectDrawing(d)">
+              <template v-if="d.type === 'pencil'">
+                 <path :d="d.path" :stroke="d.color" :stroke-width="d.strokeWidth" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+              </template>
+              <template v-else-if="d.type === 'line'">
+                 <line :x1="d.x1" :y1="d.y1" :x2="d.x2" :y2="d.y2" :stroke="d.color" :stroke-width="d.strokeWidth" />
+              </template>
+              <template v-else-if="d.type === 'arrow'">
+                 <line :x1="d.x1" :y1="d.y1" :x2="d.x2" :y2="d.y2" :stroke="d.color" :stroke-width="d.strokeWidth" marker-end="url(#arrowhead)" />
+              </template>
+              <template v-else-if="d.type === 'polygon'">
+                 <polygon :points="d.points" :stroke="d.color" :stroke-width="d.strokeWidth" fill="none" />
+              </template>
+              
+              <!-- Selection Highlight (if implemented) -->
+              <template v-if="selectedDrawingId === d.id">
+                 <!-- Simple highlight for pencil/polygon is harder, maybe bounding box? For line/arrow just stroke? -->
+              </template>
+           </g>
+           
+           <!-- Current Drawing Preview -->
+           <g v-if="isDrawingDraw">
+              <template v-if="drawType === 'pencil'">
+                 <path :d="currentDrawingPath" stroke="black" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+              </template>
+              <template v-else-if="drawType === 'line'">
+                 <line :x1="drawStart.x" :y1="drawStart.y" :x2="currentMousePos.x" :y2="currentMousePos.y" stroke="black" stroke-width="2" />
+              </template>
+              <template v-else-if="drawType === 'arrow'">
+                 <line :x1="drawStart.x" :y1="drawStart.y" :x2="currentMousePos.x" :y2="currentMousePos.y" stroke="black" stroke-width="2" marker-end="url(#arrowhead)" />
+              </template>
+              <template v-else-if="drawType === 'polygon'">
+                 <polyline :points="currentPolygonString" stroke="black" stroke-width="2" fill="none" />
+                 <!-- Line to cursor -->
+                 <line v-if="polygonPoints.length > 0" :x1="polygonPoints[polygonPoints.length-1].x" :y1="polygonPoints[polygonPoints.length-1].y" :x2="currentMousePos.x" :y2="currentMousePos.y" stroke="black" stroke-width="1" stroke-dasharray="4" />
+              </template>
+           </g>
+        </svg>
+        
+        <!-- Delete button for selected drawing (HTML overlay) -->
+        <div v-if="selectedDrawingId" class="drawing-controls" :style="{ left: selectedDrawingPos.x + 'px', top: selectedDrawingPos.y + 'px' }">
+             <v-icon icon="mdi-close-circle" color="error" class="delete-btn-drawing" @click.stop="deleteSelectedDrawing"></v-icon>
+        </div>
+
+        <!-- Signatures Layer -->
+        <div class="signature-layer">
+          <div v-for="sig in (signatureObjects[pageNum] || [])" :key="sig.id"
+               class="signature-element"
+               :style="{ 
+                 left: sig.x + 'px', 
+                 top: sig.y + 'px', 
+                 width: sig.width + 'px', 
+                 height: sig.height + 'px'
+               }"
+               @mousedown.stop="startDragSignature($event, sig)">
+               <img :src="sig.dataUrl" style="width: 100%; height: 100%; object-fit: contain;" />
+               <div v-if="selectedSignatureId === sig.id" class="signature-controls">
+                 <div class="resize-handle" @mousedown.stop="startResizeSignature($event, sig)"></div>
+                 <v-icon icon="mdi-close-circle" color="error" class="delete-btn-signature" @click.stop="deleteSignatureObject(sig)"></v-icon>
+               </div>
           </div>
         </div>
 
@@ -322,6 +607,25 @@
       </div>
     </div>
   </v-container>
+
+  <v-dialog v-model="showWatermarkDialog" max-width="400">
+      <v-card>
+          <v-card-title class="text-h5">Add Watermark</v-card-title>
+          <v-card-text>
+              <v-text-field v-model="watermarkConfig.text" label="Watermark Text"></v-text-field>
+              <v-slider v-model="watermarkConfig.opacity" label="Opacity" min="0" max="1" step="0.1" thumb-label></v-slider>
+              <v-slider v-model="watermarkConfig.rotation" label="Rotation" min="-180" max="180" step="15" thumb-label></v-slider>
+              <v-slider v-model="watermarkConfig.size" label="Font Size" min="10" max="200" step="5" thumb-label></v-slider>
+              <v-color-picker v-model="watermarkConfig.color" mode="hex" hide-inputs hide-canvas class="mb-2"></v-color-picker>
+          </v-card-text>
+          <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="grey-darken-1" variant="text" @click="showWatermarkDialog = false">Cancel</v-btn>
+              <v-btn color="error" variant="text" @click="removeWatermark">Remove</v-btn>
+              <v-btn color="primary" @click="applyWatermark">Apply</v-btn>
+          </v-card-actions>
+      </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
@@ -329,12 +633,21 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import * as pdfjsLib from 'pdfjs-dist'
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts, pushGraphicsState, popGraphicsState, translate, rotate, degrees } from 'pdf-lib'
 
 // Set worker source
 // Note: In a production environment, you might want to bundle the worker.
 // Using CDN for simplicity in this setup.
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+
+const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? rgb(
+        parseInt(result[1], 16) / 255,
+        parseInt(result[2], 16) / 255,
+        parseInt(result[3], 16) / 255
+    ) : rgb(0, 0, 0);
+}
 
 const store = useStore()
 const router = useRouter()
@@ -343,15 +656,22 @@ const file = computed(() => store.getters.getFile)
 const pdfDoc = ref(null)
 const pageNum = ref(1)
 const numPages = ref(0)
-const scale = ref(1.2) // Adjusted scale
+const scale = ref(1.5) // Adjusted scale
 const pdfCanvas = ref(null)
 const signCanvas = ref(null)
+const imageInput = ref(null)
 const canvasWrapper = ref(null)
 const tool = ref('view')
-const signatures = ref({}) // Store signatures per page: { pageNum: dataUrl }
+const signatures = ref({}) // Store full-page signatures (deprecated/legacy)
+const signatureObjects = ref({}) // Store individual signature objects per page: { pageNum: [{ id, x, y, width, height, dataUrl }] }
+const images = ref({}) // Store images per page: { pageNum: [{ id, x, y, width, height, dataUrl }] }
+const drawings = ref({}) // Store drawings per page: { pageNum: [{ id, type, x1, y1, x2, y2, path, points, color, strokeWidth }] }
 const texts = ref({}) // Store texts per page: { pageNum: [{ id, x, y, text, fontSize, color }] }
 const whiteouts = ref({}) // Store whiteouts per page: { pageNum: [{ id, x, y, width, height }] }
+const redacts = ref({}) // Store redacts per page: { pageNum: [{ id, x, y, width, height }] }
 const highlights = ref({}) // Store highlights per page: { pageNum: [{ id, x, y, width, height }] }
+const strikeouts = ref({}) // Store strikeouts per page: { pageNum: [{ id, x, y, width, height }] }
+const underlines = ref({}) // Store underlines per page: { pageNum: [{ id, x, y, width, height }] }
 const shapes = ref({}) // Store shapes per page: { pageNum: [{ id, x, y, type }] }
 const viewportSize = ref({ width: 0, height: 0 })
 const editingTextId = ref(null)
@@ -360,10 +680,77 @@ const dragOffset = ref({ x: 0, y: 0 })
 
 const isDrawing = ref(false)
 const isDrawingWhiteout = ref(false)
+const isDrawingRedact = ref(false)
 const isDrawingHighlight = ref(false)
+const isDrawingStrikeout = ref(false)
+const isDrawingUnderline = ref(false)
+const isDrawingDraw = ref(false)
+const drawType = ref('pencil') // pencil, line, arrow, polygon
+const drawStart = ref({ x: 0, y: 0 })
+const currentMousePos = ref({ x: 0, y: 0 })
+const polygonPoints = ref([]) // Array of {x, y}
+const pencilPoints = ref([]) // Array of {x, y}
+const selectedDrawingId = ref(null)
+const selectedDrawingPos = ref({ x: 0, y: 0 })
+
+const currentDrawingPath = computed(() => {
+    if (drawType.value === 'pencil' && pencilPoints.value.length > 0) {
+        return `M ${pencilPoints.value.map(p => `${p.x} ${p.y}`).join(' L ')}`
+    }
+    return ''
+})
+
+const currentPolygonString = computed(() => {
+    return polygonPoints.value.map(p => `${p.x},${p.y}`).join(' ')
+})
+
 const shapeType = ref('checkbox') // checkbox, radio, check, cross, circle
 const currentWhiteout = ref({ x: 0, y: 0, width: 0, height: 0 })
+const currentRedact = ref({ x: 0, y: 0, width: 0, height: 0 })
 const currentHighlight = ref({ x: 0, y: 0, width: 0, height: 0 })
+const currentStrikeout = ref({ x: 0, y: 0, width: 0, height: 0 })
+const currentUnderline = ref({ x: 0, y: 0, width: 0, height: 0 })
+
+const showSignatureModal = ref(false)
+const showWatermarkDialog = ref(false)
+const signaturePad = ref(null)
+
+const watermarkConfig = ref({
+    text: 'CONFIDENTIAL',
+    opacity: 0.3,
+    rotation: -45,
+    size: 60,
+    color: '#000000'
+})
+const watermark = ref(null) // { text, opacity, rotation, size, color }
+
+const openWatermarkDialog = () => {
+    if (watermark.value) {
+        watermarkConfig.value = { ...watermark.value }
+    }
+    showWatermarkDialog.value = true
+}
+
+const applyWatermark = () => {
+    watermark.value = { ...watermarkConfig.value }
+    showWatermarkDialog.value = false
+    pushToHistory()
+}
+
+const removeWatermark = () => {
+    watermark.value = null
+    showWatermarkDialog.value = false
+    pushToHistory()
+}
+const selectedSignatureId = ref(null)
+const draggingSignatureId = ref(null)
+const resizingSignatureId = ref(null)
+const selectedImageId = ref(null)
+const draggingImageId = ref(null)
+const resizingImageId = ref(null)
+const initialImageState = ref(null)
+const initialSignatureState = ref(null)
+const isDrawingSignature = ref(false)
 
 // History State
 const history = ref([])
@@ -378,7 +765,10 @@ const initialShapeState = ref(null) // { x, y, width, height }
 const startMousePos = ref({ x: 0, y: 0 })
 
 const whiteoutStart = ref({ x: 0, y: 0 })
+const redactStart = ref({ x: 0, y: 0 })
 const highlightStart = ref({ x: 0, y: 0 })
+const strikeoutStart = ref({ x: 0, y: 0 })
+const underlineStart = ref({ x: 0, y: 0 })
 const lastX = ref(0)
 const lastY = ref(0)
 
@@ -410,10 +800,17 @@ const pushToHistory = () => {
     // Deep clone current state
     const state = {
         signatures: JSON.parse(JSON.stringify(signatures.value)),
+        signatureObjects: JSON.parse(JSON.stringify(signatureObjects.value)),
+        images: JSON.parse(JSON.stringify(images.value)),
+        drawings: JSON.parse(JSON.stringify(drawings.value)),
         texts: JSON.parse(JSON.stringify(texts.value)),
         whiteouts: JSON.parse(JSON.stringify(whiteouts.value)),
+        redacts: JSON.parse(JSON.stringify(redacts.value)),
         shapes: JSON.parse(JSON.stringify(shapes.value)),
-        highlights: JSON.parse(JSON.stringify(highlights.value))
+        highlights: JSON.parse(JSON.stringify(highlights.value)),
+        strikeouts: JSON.parse(JSON.stringify(strikeouts.value)),
+        underlines: JSON.parse(JSON.stringify(underlines.value)),
+        watermark: watermark.value ? JSON.parse(JSON.stringify(watermark.value)) : null
     }
 
     // Remove future history if we pushed a new action while in the middle of history
@@ -460,10 +857,17 @@ const redo = () => {
 
 const restoreState = (state) => {
     signatures.value = JSON.parse(JSON.stringify(state.signatures))
+    signatureObjects.value = JSON.parse(JSON.stringify(state.signatureObjects || {}))
+    images.value = JSON.parse(JSON.stringify(state.images || {}))
+    drawings.value = JSON.parse(JSON.stringify(state.drawings || {}))
     texts.value = JSON.parse(JSON.stringify(state.texts))
     whiteouts.value = JSON.parse(JSON.stringify(state.whiteouts))
+    redacts.value = JSON.parse(JSON.stringify(state.redacts || {}))
     shapes.value = JSON.parse(JSON.stringify(state.shapes))
     highlights.value = JSON.parse(JSON.stringify(state.highlights))
+    strikeouts.value = JSON.parse(JSON.stringify(state.strikeouts || {})) // Handle old history without strikeouts
+    underlines.value = JSON.parse(JSON.stringify(state.underlines || {})) // Handle old history without underlines
+    watermark.value = state.watermark ? JSON.parse(JSON.stringify(state.watermark)) : null
 }
 
 onUnmounted(() => {
@@ -584,6 +988,17 @@ const handleCanvasMouseDown = (e) => {
       
       window.addEventListener('mousemove', handleWindowMouseMove)
       window.addEventListener('mouseup', handleWindowMouseUp)
+  } else if (tool.value === 'redact') {
+      const rect = canvasWrapper.value.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      isDrawingRedact.value = true
+      redactStart.value = { x, y }
+      currentRedact.value = { x, y, width: 0, height: 0 }
+      
+      window.addEventListener('mousemove', handleWindowMouseMove)
+      window.addEventListener('mouseup', handleWindowMouseUp)
   } else if (tool.value === 'highlight') {
       const rect = canvasWrapper.value.getBoundingClientRect()
       const x = e.clientX - rect.left
@@ -595,19 +1010,89 @@ const handleCanvasMouseDown = (e) => {
       
       window.addEventListener('mousemove', handleWindowMouseMove)
       window.addEventListener('mouseup', handleWindowMouseUp)
+  } else if (tool.value === 'strikeout') {
+      const rect = canvasWrapper.value.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      isDrawingStrikeout.value = true
+      strikeoutStart.value = { x, y }
+      currentStrikeout.value = { x, y, width: 0, height: 0 }
+      
+      window.addEventListener('mousemove', handleWindowMouseMove)
+      window.addEventListener('mouseup', handleWindowMouseUp)
+  } else if (tool.value === 'underline') {
+      const rect = canvasWrapper.value.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      isDrawingUnderline.value = true
+      underlineStart.value = { x, y }
+      currentUnderline.value = { x, y, width: 0, height: 0 }
+      
+      window.addEventListener('mousemove', handleWindowMouseMove)
+      window.addEventListener('mouseup', handleWindowMouseUp)
+  } else if (tool.value === 'draw') {
+      const rect = canvasWrapper.value.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      if (drawType.value === 'polygon') {
+          // Polygon handled in click
+          return
+      }
+      
+      isDrawingDraw.value = true
+      drawStart.value = { x, y }
+      currentMousePos.value = { x, y }
+      
+      if (drawType.value === 'pencil') {
+          pencilPoints.value = [{ x, y }]
+      }
+      
+      window.addEventListener('mousemove', handleWindowMouseMove)
+      window.addEventListener('mouseup', handleWindowMouseUp)
   }
 }
 
 const handleCanvasClick = (e) => {
-  if (tool.value === 'whiteout' || tool.value === 'highlight') return // Handled by mousedown/up
-  if (draggingTextId.value || editingTextId.value || draggingShapeId.value || resizingShapeId.value) return
+  if (tool.value === 'whiteout' || tool.value === 'redact' || tool.value === 'highlight' || tool.value === 'strikeout' || tool.value === 'underline') return // Handled by mousedown/up
+  if (draggingTextId.value || editingTextId.value || draggingShapeId.value || resizingShapeId.value || draggingSignatureId.value || resizingSignatureId.value || draggingImageId.value || resizingImageId.value) return
 
   const rect = canvasWrapper.value.getBoundingClientRect()
   const x = e.clientX - rect.left
   const y = e.clientY - rect.top
 
-  if (tool.value !== 'text' && tool.value !== 'shape') return
+  if (tool.value === 'draw') {
+      // Handle selection deselect if clicked empty space
+      if (!selectedDrawingId.value && drawType.value !== 'polygon') {
+         // Maybe allow drawing to start on mousedown? Yes.
+      } else {
+         selectedDrawingId.value = null
+      }
+      
+      if (drawType.value === 'polygon') {
+          if (polygonPoints.value.length === 0) {
+             window.addEventListener('mousemove', handleWindowMouseMove)
+          }
+          // Add point
+          polygonPoints.value.push({ x, y })
+          isDrawingDraw.value = true
+          currentMousePos.value = { x, y }
+          return
+      }
+  }
+
+  if (tool.value !== 'text' && tool.value !== 'shape' && tool.value !== 'sign' && tool.value !== 'draw') return
   
+  if (tool.value === 'sign') {
+      // If we are in sign tool, clicking should deselect any selected signature unless we clicked on one
+      // The @mousedown.stop on signature elements handles selection.
+      // So if we are here, we clicked on empty space.
+      selectedSignatureId.value = null
+      return
+  }
+
   if (tool.value === 'shape') {
       const newShape = {
           id: Date.now(),
@@ -711,6 +1196,46 @@ const selectShape = (shape) => {
     }
 }
 
+const setDrawTool = (type) => {
+    drawType.value = type
+    tool.value = 'draw'
+    selectedDrawingId.value = null
+}
+
+const deleteSelectedDrawing = () => {
+    if (selectedDrawingId.value) {
+        const drawingsList = drawings.value[pageNum.value] || []
+        const idx = drawingsList.findIndex(d => d.id === selectedDrawingId.value)
+        if (idx > -1) {
+            drawingsList.splice(idx, 1)
+            selectedDrawingId.value = null
+            pushToHistory()
+        }
+    }
+}
+
+const selectDrawing = (drawing) => {
+    if (tool.value === 'draw') {
+        selectedDrawingId.value = drawing.id
+        // Calculate center for delete button
+        if (drawing.type === 'pencil' || drawing.type === 'polygon') {
+            // Simple center of bounding box
+            const points = drawing.points || [] // For polygon and pencil
+            if (points.length > 0) {
+                const xs = points.map(p => p.x)
+                const ys = points.map(p => p.y)
+                const maxX = Math.max(...xs)
+                const minY = Math.min(...ys)
+                selectedDrawingPos.value = { x: maxX, y: minY } // Top right corner
+            }
+        } else if (drawing.type === 'line' || drawing.type === 'arrow') {
+            const maxX = Math.max(drawing.x1, drawing.x2)
+            const minY = Math.min(drawing.y1, drawing.y2)
+            selectedDrawingPos.value = { x: maxX, y: minY }
+        }
+    }
+}
+
 const handleWindowMouseMove = (e) => {
   if (draggingTextId.value) {
     const rect = canvasWrapper.value.getBoundingClientRect()
@@ -763,9 +1288,81 @@ const handleWindowMouseMove = (e) => {
         const newSize = Math.max(10, initialShapeState.value.width + deltaX)
         
         shape.width = newSize
-         shape.height = newSize
+        shape.height = newSize
      }
-   } else if (isDrawingWhiteout.value) {
+   } else if (draggingSignatureId.value) {
+       const rect = canvasWrapper.value.getBoundingClientRect()
+       const sig = signatureObjects.value[pageNum.value].find(s => s.id === draggingSignatureId.value)
+       if (sig) {
+           let newX = e.clientX - rect.left - dragOffset.value.x
+           let newY = e.clientY - rect.top - dragOffset.value.y
+           
+           const viewport = viewportSize.value
+           if (newX < 0) newX = 0
+           if (newY < 0) newY = 0
+           if (viewport.width && newX > viewport.width - sig.width) newX = viewport.width - sig.width
+           if (viewport.height && newY > viewport.height - sig.height) newY = viewport.height - sig.height
+           
+           sig.x = newX
+           sig.y = newY
+       }
+   } else if (resizingSignatureId.value) {
+       const sig = signatureObjects.value[pageNum.value].find(s => s.id === resizingSignatureId.value)
+       if (sig && initialSignatureState.value) {
+           const mouseX = e.clientX
+           const deltaX = mouseX - startMousePos.value.x
+           
+           // Maintain aspect ratio
+           const ratio = initialSignatureState.value.width / initialSignatureState.value.height
+           
+           const newWidth = Math.max(20, initialSignatureState.value.width + deltaX)
+           const newHeight = newWidth / ratio
+           
+           sig.width = newWidth
+           sig.height = newHeight
+       }
+   } else if (draggingImageId.value) {
+       const rect = canvasWrapper.value.getBoundingClientRect()
+       const img = images.value[pageNum.value].find(i => i.id === draggingImageId.value)
+       if (img) {
+           let newX = e.clientX - rect.left - dragOffset.value.x
+           let newY = e.clientY - rect.top - dragOffset.value.y
+           
+           const viewport = viewportSize.value
+           if (newX < 0) newX = 0
+           if (newY < 0) newY = 0
+           if (viewport.width && newX > viewport.width - img.width) newX = viewport.width - img.width
+           if (viewport.height && newY > viewport.height - img.height) newY = viewport.height - img.height
+           
+           img.x = newX
+           img.y = newY
+       }
+   } else if (resizingImageId.value) {
+       const img = images.value[pageNum.value].find(i => i.id === resizingImageId.value)
+       if (img && initialImageState.value) {
+           const mouseX = e.clientX
+           const deltaX = mouseX - startMousePos.value.x
+           
+           // Maintain aspect ratio
+           const ratio = initialImageState.value.width / initialImageState.value.height
+           
+           const newWidth = Math.max(20, initialImageState.value.width + deltaX)
+           const newHeight = newWidth / ratio
+           
+           img.width = newWidth
+       img.height = newHeight
+   }
+} else if (isDrawingDraw.value) {
+   const rect = canvasWrapper.value.getBoundingClientRect()
+   const currentX = e.clientX - rect.left
+   const currentY = e.clientY - rect.top
+   
+   currentMousePos.value = { x: currentX, y: currentY }
+   
+   if (drawType.value === 'pencil') {
+       pencilPoints.value.push({ x: currentX, y: currentY })
+   }
+} else if (isDrawingWhiteout.value) {
      const rect = canvasWrapper.value.getBoundingClientRect()
      const currentX = e.clientX - rect.left
      const currentY = e.clientY - rect.top
@@ -776,6 +1373,20 @@ const handleWindowMouseMove = (e) => {
      currentWhiteout.value = {
          x: width > 0 ? whiteoutStart.value.x : currentX,
          y: height > 0 ? whiteoutStart.value.y : currentY,
+         width: Math.abs(width),
+         height: Math.abs(height)
+     }
+   } else if (isDrawingRedact.value) {
+     const rect = canvasWrapper.value.getBoundingClientRect()
+     const currentX = e.clientX - rect.left
+     const currentY = e.clientY - rect.top
+     
+     const width = currentX - redactStart.value.x
+     const height = currentY - redactStart.value.y
+     
+     currentRedact.value = {
+         x: width > 0 ? redactStart.value.x : currentX,
+         y: height > 0 ? redactStart.value.y : currentY,
          width: Math.abs(width),
          height: Math.abs(height)
      }
@@ -790,6 +1401,34 @@ const handleWindowMouseMove = (e) => {
      currentHighlight.value = {
          x: width > 0 ? highlightStart.value.x : currentX,
          y: height > 0 ? highlightStart.value.y : currentY,
+         width: Math.abs(width),
+         height: Math.abs(height)
+     }
+   } else if (isDrawingStrikeout.value) {
+     const rect = canvasWrapper.value.getBoundingClientRect()
+     const currentX = e.clientX - rect.left
+     const currentY = e.clientY - rect.top
+     
+     const width = currentX - strikeoutStart.value.x
+     const height = currentY - strikeoutStart.value.y
+     
+     currentStrikeout.value = {
+         x: width > 0 ? strikeoutStart.value.x : currentX,
+         y: height > 0 ? strikeoutStart.value.y : currentY,
+         width: Math.abs(width),
+         height: Math.abs(height)
+     }
+   } else if (isDrawingUnderline.value) {
+     const rect = canvasWrapper.value.getBoundingClientRect()
+     const currentX = e.clientX - rect.left
+     const currentY = e.clientY - rect.top
+     
+     const width = currentX - underlineStart.value.x
+     const height = currentY - underlineStart.value.y
+     
+     currentUnderline.value = {
+         x: width > 0 ? underlineStart.value.x : currentX,
+         y: height > 0 ? underlineStart.value.y : currentY,
          width: Math.abs(width),
          height: Math.abs(height)
      }
@@ -810,6 +1449,51 @@ const handleWindowMouseUp = () => {
           pushToHistory()
       }
       currentWhiteout.value = { x: 0, y: 0, width: 0, height: 0 }
+  } else if (isDrawingDraw.value && drawType.value !== 'polygon') {
+      isDrawingDraw.value = false
+      // Save drawing
+      if (!drawings.value[pageNum.value]) {
+          drawings.value[pageNum.value] = []
+      }
+      
+      const newDrawing = {
+          id: Date.now(),
+          type: drawType.value,
+          color: 'black',
+          strokeWidth: 2
+      }
+      
+      if (drawType.value === 'pencil') {
+          if (pencilPoints.value.length > 1) {
+              newDrawing.points = [...pencilPoints.value]
+              newDrawing.path = currentDrawingPath.value
+              drawings.value[pageNum.value].push(newDrawing)
+              pushToHistory()
+          }
+          pencilPoints.value = []
+      } else if (drawType.value === 'line' || drawType.value === 'arrow') {
+          if (Math.abs(currentMousePos.value.x - drawStart.value.x) > 2 || Math.abs(currentMousePos.value.y - drawStart.value.y) > 2) {
+              newDrawing.x1 = drawStart.value.x
+              newDrawing.y1 = drawStart.value.y
+              newDrawing.x2 = currentMousePos.value.x
+              newDrawing.y2 = currentMousePos.value.y
+              drawings.value[pageNum.value].push(newDrawing)
+              pushToHistory()
+          }
+      }
+  } else if (isDrawingRedact.value) {
+      isDrawingRedact.value = false
+      if (currentRedact.value.width > 5 && currentRedact.value.height > 5) {
+          if (!redacts.value[pageNum.value]) {
+              redacts.value[pageNum.value] = []
+          }
+          redacts.value[pageNum.value].push({
+              id: Date.now(),
+              ...currentRedact.value
+          })
+          pushToHistory()
+      }
+      currentRedact.value = { x: 0, y: 0, width: 0, height: 0 }
   } else if (isDrawingHighlight.value) {
       isDrawingHighlight.value = false
       if (currentHighlight.value.width > 5 && currentHighlight.value.height > 5) {
@@ -823,7 +1507,33 @@ const handleWindowMouseUp = () => {
           pushToHistory()
       }
       currentHighlight.value = { x: 0, y: 0, width: 0, height: 0 }
-  } else if (draggingTextId.value || draggingShapeId.value || resizingShapeId.value) {
+  } else if (isDrawingStrikeout.value) {
+      isDrawingStrikeout.value = false
+      if (currentStrikeout.value.width > 5) { // Allow thin height, but check width
+          if (!strikeouts.value[pageNum.value]) {
+              strikeouts.value[pageNum.value] = []
+          }
+          strikeouts.value[pageNum.value].push({
+              id: Date.now(),
+              ...currentStrikeout.value
+          })
+          pushToHistory()
+      }
+      currentStrikeout.value = { x: 0, y: 0, width: 0, height: 0 }
+  } else if (isDrawingUnderline.value) {
+      isDrawingUnderline.value = false
+      if (currentUnderline.value.width > 5) {
+          if (!underlines.value[pageNum.value]) {
+              underlines.value[pageNum.value] = []
+          }
+          underlines.value[pageNum.value].push({
+              id: Date.now(),
+              ...currentUnderline.value
+          })
+          pushToHistory()
+      }
+      currentUnderline.value = { x: 0, y: 0, width: 0, height: 0 }
+  } else if (draggingTextId.value || draggingShapeId.value || resizingShapeId.value || draggingSignatureId.value || resizingSignatureId.value || draggingImageId.value || resizingImageId.value) {
       // End of drag/resize
       pushToHistory()
       
@@ -834,6 +1544,16 @@ const handleWindowMouseUp = () => {
       } else if (resizingShapeId.value) {
         resizingShapeId.value = null
         initialShapeState.value = null
+      } else if (draggingSignatureId.value) {
+        draggingSignatureId.value = null
+      } else if (resizingSignatureId.value) {
+        resizingSignatureId.value = null
+        initialSignatureState.value = null
+      } else if (draggingImageId.value) {
+        draggingImageId.value = null
+      } else if (resizingImageId.value) {
+        resizingImageId.value = null
+        initialImageState.value = null
       }
   }
   
@@ -863,6 +1583,189 @@ const editText = (text) => {
   }
 }
 
+const deleteSignatureObject = (sig) => {
+    const idx = signatureObjects.value[pageNum.value].indexOf(sig)
+    if (idx > -1) {
+        signatureObjects.value[pageNum.value].splice(idx, 1)
+        pushToHistory()
+    }
+}
+
+const deleteImageObject = (img) => {
+    const idx = images.value[pageNum.value].indexOf(img)
+    if (idx > -1) {
+        images.value[pageNum.value].splice(idx, 1)
+        pushToHistory()
+    }
+}
+
+const openSignatureModal = () => {
+    showSignatureModal.value = true
+    // Wait for dialog to open then init pad? 
+    // Actually we can init on mousedown or just use native canvas events.
+}
+
+const clearSignaturePad = () => {
+    const canvas = signaturePad.value
+    if (canvas) {
+        const ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+    }
+}
+
+const startSignature = (e) => {
+    isDrawingSignature.value = true
+    const canvas = signaturePad.value
+    const ctx = canvas.getContext('2d')
+    const rect = canvas.getBoundingClientRect()
+    ctx.beginPath()
+    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top)
+}
+
+const drawSignature = (e) => {
+    if (!isDrawingSignature.value) return
+    const canvas = signaturePad.value
+    const ctx = canvas.getContext('2d')
+    const rect = canvas.getBoundingClientRect()
+    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top)
+    ctx.stroke()
+}
+
+const stopSignature = () => {
+    isDrawingSignature.value = false
+}
+
+const saveSignatureFromModal = () => {
+    const canvas = signaturePad.value
+    if (canvas) {
+        // Trim canvas? For now just save full.
+        const dataUrl = canvas.toDataURL('image/png')
+        
+        // Create signature object in center of screen
+        const viewport = viewportSize.value
+        const width = 200
+        const height = 100
+        const x = (viewport.width / 2) - (width / 2)
+        const y = (viewport.height / 2) - (height / 2)
+        
+        const newSig = {
+            id: Date.now(),
+            x: Math.max(0, x),
+            y: Math.max(0, y),
+            width: width,
+            height: height,
+            dataUrl: dataUrl
+        }
+        
+        if (!signatureObjects.value[pageNum.value]) {
+            signatureObjects.value[pageNum.value] = []
+        }
+        signatureObjects.value[pageNum.value].push(newSig)
+        pushToHistory()
+        
+        showSignatureModal.value = false
+        clearSignaturePad()
+    }
+}
+
+const startDragSignature = (e, sig) => {
+    if (tool.value !== 'sign') return
+    
+    selectedSignatureId.value = sig.id
+    draggingSignatureId.value = sig.id
+    dragOffset.value = {
+        x: e.clientX - canvasWrapper.value.getBoundingClientRect().left - sig.x,
+        y: e.clientY - canvasWrapper.value.getBoundingClientRect().top - sig.y
+    }
+    
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+}
+
+const startResizeSignature = (e, sig) => {
+    resizingSignatureId.value = sig.id
+    initialSignatureState.value = { ...sig }
+    startMousePos.value = { x: e.clientX, y: e.clientY }
+    
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+}
+
+const triggerImageUpload = () => {
+    imageInput.value.click()
+}
+
+const handleImageUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    
+    const reader = new FileReader()
+    reader.onload = (event) => {
+        const dataUrl = event.target.result
+        
+        // Get image dimensions to set initial size
+        const img = new Image()
+        img.onload = () => {
+             // Default size or scaled down if too big
+             let width = img.width
+             let height = img.height
+             
+             // Max initial size 300px width
+             if (width > 300) {
+                 const ratio = width / height
+                 width = 300
+                 height = 300 / ratio
+             }
+             
+             const viewport = viewportSize.value
+             const x = (viewport.width / 2) - (width / 2)
+             const y = (viewport.height / 2) - (height / 2)
+             
+             const newImage = {
+                 id: Date.now(),
+                 x: Math.max(0, x),
+                 y: Math.max(0, y),
+                 width: width,
+                 height: height,
+                 dataUrl: dataUrl,
+                 fileType: file.type // Store mime type for PDF embedding
+             }
+             
+             if (!images.value[pageNum.value]) {
+                 images.value[pageNum.value] = []
+             }
+             images.value[pageNum.value].push(newImage)
+             pushToHistory()
+        }
+        img.src = dataUrl
+    }
+    reader.readAsDataURL(file)
+    
+    // Reset input
+    e.target.value = ''
+}
+
+const startDragImage = (e, img) => {
+    selectedImageId.value = img.id
+    draggingImageId.value = img.id
+    dragOffset.value = {
+        x: e.clientX - canvasWrapper.value.getBoundingClientRect().left - img.x,
+        y: e.clientY - canvasWrapper.value.getBoundingClientRect().top - img.y
+    }
+    
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+}
+
+const startResizeImage = (e, img) => {
+    resizingImageId.value = img.id
+    initialImageState.value = { ...img }
+    startMousePos.value = { x: e.clientX, y: e.clientY }
+    
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+}
+
 const deleteText = (text) => {
   const idx = texts.value[pageNum.value].indexOf(text)
   if (idx > -1) {
@@ -879,10 +1782,34 @@ const deleteWhiteout = (w) => {
   }
 }
 
+const deleteRedact = (r) => {
+  const idx = redacts.value[pageNum.value].indexOf(r)
+  if (idx > -1) {
+      redacts.value[pageNum.value].splice(idx, 1)
+      pushToHistory()
+  }
+}
+
 const deleteHighlight = (h) => {
   const idx = highlights.value[pageNum.value].indexOf(h)
   if (idx > -1) {
       highlights.value[pageNum.value].splice(idx, 1)
+      pushToHistory()
+  }
+}
+
+const deleteStrikeout = (s) => {
+  const idx = strikeouts.value[pageNum.value].indexOf(s)
+  if (idx > -1) {
+      strikeouts.value[pageNum.value].splice(idx, 1)
+      pushToHistory()
+  }
+}
+
+const deleteUnderline = (u) => {
+  const idx = underlines.value[pageNum.value].indexOf(u)
+  if (idx > -1) {
+      underlines.value[pageNum.value].splice(idx, 1)
       pushToHistory()
   }
 }
@@ -920,21 +1847,33 @@ const getCssFontFamily = (pdfFontFamily) => {
 }
 
 const resetCurrentPage = () => {
-    if (!confirm('Are you sure you want to reset all edits on this page?')) return
+    if (!confirm('Are you sure you want to reset edits for this tool on this page?')) return
     
     const current = pageNum.value
     
-    signatures.value[current] = null
-    if (texts.value[current]) texts.value[current] = []
-    if (whiteouts.value[current]) whiteouts.value[current] = []
-    if (shapes.value[current]) shapes.value[current] = []
-    if (highlights.value[current]) highlights.value[current] = []
-    
-    // Clear canvas
+    if (tool.value === 'sign') {
+    if (signatures.value[current]) signatures.value[current] = null
     const canvas = signCanvas.value
     if (canvas) {
         const ctx = canvas.getContext('2d')
         ctx.clearRect(0, 0, canvas.width, canvas.height)
+    }
+    // Also clear signature objects
+    if (signatureObjects.value[current]) signatureObjects.value[current] = []
+  } else if (tool.value === 'text') {
+        if (texts.value[current]) texts.value[current] = []
+    } else if (tool.value === 'whiteout') {
+        if (whiteouts.value[current]) whiteouts.value[current] = []
+    } else if (tool.value === 'redact') {
+        if (redacts.value[current]) redacts.value[current] = []
+    } else if (tool.value === 'highlight') {
+        if (highlights.value[current]) highlights.value[current] = []
+    } else if (tool.value === 'strikeout') {
+        if (strikeouts.value[current]) strikeouts.value[current] = []
+    } else if (tool.value === 'shape') {
+        if (shapes.value[current]) shapes.value[current] = []
+    } else if (tool.value === 'watermark') {
+        watermark.value = null
     }
     
     pushToHistory()
@@ -1012,7 +1951,27 @@ const saveSignature = async () => {
         }
       }
 
-      // 1. Embed Signatures
+      // 0b. Embed Redactions
+      const pageRedacts = redacts.value[pNum]
+      if (pageRedacts && pageRedacts.length > 0) {
+        for (const r of pageRedacts) {
+             const x = r.x / scale.value
+             // PDF Y is bottom-up
+             const y = height - (r.y / scale.value) - (r.height / scale.value)
+             
+             page.drawRectangle({
+                 x: x,
+                 y: y,
+                 width: r.width / scale.value,
+                 height: r.height / scale.value,
+                 color: rgb(0, 0, 0), // Black
+                 borderColor: undefined,
+                 borderWidth: 0,
+             })
+        }
+      }
+
+      // 1. Embed Signatures (Legacy Canvas)
       const signatureDataUrl = signatures.value[pNum]
       if (signatureDataUrl) {
         const pngImage = await pdfDoc.embedPng(signatureDataUrl)
@@ -1022,6 +1981,62 @@ const saveSignature = async () => {
           width: width,
           height: height,
         })
+      }
+
+      // 1b. Embed Signature Objects (New Draggable)
+      const pageSigs = signatureObjects.value[pNum]
+      if (pageSigs && pageSigs.length > 0) {
+          for (const sig of pageSigs) {
+              const pngImage = await pdfDoc.embedPng(sig.dataUrl)
+              const x = sig.x / scale.value
+              const y = height - (sig.y / scale.value) - (sig.height / scale.value)
+              
+              page.drawImage(pngImage, {
+                  x: x,
+                  y: y,
+                  width: sig.width / scale.value,
+                  height: sig.height / scale.value
+              })
+          }
+      }
+
+      // 2. Embed Images
+      const pageImages = images.value[pNum]
+      if (pageImages && pageImages.length > 0) {
+          for (const img of pageImages) {
+              let embeddedImage
+              try {
+                  if (img.fileType === 'image/jpeg' || img.fileType === 'image/jpg') {
+                      embeddedImage = await pdfDoc.embedJpg(img.dataUrl)
+                  } else {
+                      // Default to PNG (also handles base64 data URLs often)
+                      embeddedImage = await pdfDoc.embedPng(img.dataUrl)
+                  }
+              } catch (e) {
+                  console.warn('Failed to embed image, trying fallback', e)
+                  // Fallback: sometimes dataURL type is missing or wrong, try the other
+                  try {
+                      embeddedImage = await pdfDoc.embedPng(img.dataUrl)
+                  } catch (e2) {
+                      try {
+                          embeddedImage = await pdfDoc.embedJpg(img.dataUrl)
+                      } catch (e3) {
+                          console.error('Could not embed image', e3)
+                          continue
+                      }
+                  }
+              }
+
+              const x = img.x / scale.value
+              const y = height - (img.y / scale.value) - (img.height / scale.value)
+              
+              page.drawImage(embeddedImage, {
+                  x: x,
+                  y: y,
+                  width: img.width / scale.value,
+                  height: img.height / scale.value
+              })
+          }
       }
 
       // 3. Embed Shapes
@@ -1092,6 +2107,93 @@ const saveSignature = async () => {
         }
       }
 
+      // 3b. Embed Drawings (Pencil, Line, Arrow, Polygon)
+      const pageDrawings = drawings.value[pNum]
+      if (pageDrawings && pageDrawings.length > 0) {
+          for (const d of pageDrawings) {
+              if (d.type === 'pencil') {
+                  // Convert SVG path to PDF drawSvgPath? pdf-lib supports this?
+                  // Actually pdf-lib has drawSvgPath since v1.11.0?
+                  // If not, we can parse points. We stored points!
+                  if (d.points && d.points.length > 1) {
+                      // Draw lines
+                      for (let k = 0; k < d.points.length - 1; k++) {
+                          const p1 = d.points[k]
+                          const p2 = d.points[k+1]
+                          page.drawLine({
+                              start: { x: p1.x / scale.value, y: height - (p1.y / scale.value) },
+                              end: { x: p2.x / scale.value, y: height - (p2.y / scale.value) },
+                              thickness: d.strokeWidth,
+                              color: rgb(0, 0, 0),
+                          })
+                      }
+                  }
+              } else if (d.type === 'line') {
+                  page.drawLine({
+                      start: { x: d.x1 / scale.value, y: height - (d.y1 / scale.value) },
+                      end: { x: d.x2 / scale.value, y: height - (d.y2 / scale.value) },
+                      thickness: d.strokeWidth,
+                      color: rgb(0, 0, 0),
+                  })
+              } else if (d.type === 'arrow') {
+                  const startX = d.x1 / scale.value
+                  const startY = height - (d.y1 / scale.value)
+                  const endX = d.x2 / scale.value
+                  const endY = height - (d.y2 / scale.value)
+                  
+                  page.drawLine({
+                      start: { x: startX, y: startY },
+                      end: { x: endX, y: endY },
+                      thickness: d.strokeWidth,
+                      color: rgb(0, 0, 0),
+                  })
+                  
+                  // Draw Arrowhead
+                  // Calculate angle
+                  const angle = Math.atan2(endY - startY, endX - startX)
+                  const headLen = 10 // length of head in pixels
+                  
+                  page.drawLine({
+                      start: { x: endX, y: endY },
+                      end: { 
+                          x: endX - headLen * Math.cos(angle - Math.PI / 6),
+                          y: endY - headLen * Math.sin(angle - Math.PI / 6)
+                      },
+                      thickness: d.strokeWidth,
+                      color: rgb(0, 0, 0),
+                  })
+                  page.drawLine({
+                      start: { x: endX, y: endY },
+                      end: { 
+                          x: endX - headLen * Math.cos(angle + Math.PI / 6),
+                          y: endY - headLen * Math.sin(angle + Math.PI / 6)
+                      },
+                      thickness: d.strokeWidth,
+                      color: rgb(0, 0, 0),
+                  })
+              } else if (d.type === 'polygon') {
+                  const pointsStr = d.points.split(' ')
+                  const points = pointsStr.map(p => {
+                      const [x, y] = p.split(',')
+                      return { x: parseFloat(x), y: parseFloat(y) }
+                  })
+                  
+                  if (points.length > 1) {
+                      for (let k = 0; k < points.length; k++) {
+                          const p1 = points[k]
+                          const p2 = points[(k + 1) % points.length] // Close loop
+                          page.drawLine({
+                              start: { x: p1.x / scale.value, y: height - (p1.y / scale.value) },
+                              end: { x: p2.x / scale.value, y: height - (p2.y / scale.value) },
+                              thickness: d.strokeWidth,
+                              color: rgb(0, 0, 0),
+                          })
+                      }
+                  }
+              }
+          }
+      }
+
       // 4. Embed Texts
       const pageTexts = texts.value[pNum]
       if (pageTexts && pageTexts.length > 0) {
@@ -1136,6 +2238,78 @@ const saveSignature = async () => {
             })
         }
       }
+      // 6. Embed Strikeouts
+      const pageStrikeouts = strikeouts.value[pNum]
+      if (pageStrikeouts && pageStrikeouts.length > 0) {
+        for (const s of pageStrikeouts) {
+            const x = s.x / scale.value
+            // PDF Y is bottom-up
+            const y = height - (s.y / scale.value) - (s.height / scale.value)
+            
+            // Draw a line through the middle of the box
+            const midY = y + (s.height / scale.value) / 2
+            
+            page.drawLine({
+                 start: { x: x, y: midY },
+                 end: { x: x + (s.width / scale.value), y: midY },
+                 thickness: 2,
+                 color: rgb(0, 0, 0), // Black
+             })
+         }
+       }
+
+       // 7. Embed Underlines
+       const pageUnderlines = underlines.value[pNum]
+       if (pageUnderlines && pageUnderlines.length > 0) {
+         for (const u of pageUnderlines) {
+             const x = u.x / scale.value
+             // PDF Y is bottom-up
+             const y = height - (u.y / scale.value) - (u.height / scale.value)
+             
+             // Draw a line at the bottom
+             page.drawLine({
+                 start: { x: x, y: y },
+                 end: { x: x + (u.width / scale.value), y: y },
+                 thickness: 2,
+                 color: rgb(0, 0, 0), // Black
+             })
+         }
+       }
+     }
+    
+    // Embed Watermark
+    if (watermark.value) {
+        const { text, opacity, rotation, size, color } = watermark.value
+        const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+        
+        // Apply to all pages
+        const pages = pdfDoc.getPages()
+        for (const p of pages) {
+            const { width, height } = p.getSize()
+            
+            // Measure text to center it
+            const textWidth = font.widthOfTextAtSize(text, size)
+            const textHeight = font.heightAtSize(size)
+            
+            p.pushOperators(
+              pushGraphicsState(),
+              translate(width / 2, height / 2),
+              rotate(degrees(rotation)),
+              translate(-textWidth / 2, -textHeight / 4) // Approximate vertical center
+            )
+            
+            p.drawText(text, {
+                x: 0,
+                y: 0,
+                size: size,
+                font: font,
+                color: hexToRgb(color),
+                opacity: opacity,
+                rotate: degrees(0),
+            })
+            
+            p.pushOperators(popGraphicsState())
+        }
     }
     
     const pdfBytes = await pdfDoc.save()
@@ -1163,7 +2337,7 @@ const downloadBlob = (data, fileName, mimeType) => {
 <style scoped>
 .canvas-wrapper {
   position: relative;
-  border: 1px solid #ddd;
+  border: 1px solid black;
   display: inline-block;
   overflow: hidden; /* Ensure content doesn't spill */
 }
@@ -1184,7 +2358,133 @@ const downloadBlob = (data, fileName, mimeType) => {
   pointer-events: none;
 }
 
-.text-layer {
+  .drawing-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 33; /* Below images (34) and signatures (35), above text (20) */
+    pointer-events: none;
+  }
+  
+  .drawing-element {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  
+  .drawing-element:hover {
+    opacity: 0.7;
+  }
+  
+  .drawing-controls {
+    position: absolute;
+    z-index: 40;
+    pointer-events: none;
+  }
+  
+  .delete-btn-drawing {
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    pointer-events: auto;
+    transform: translate(-50%, -50%);
+  }
+
+  .image-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 34; /* Below signature (35) */
+    pointer-events: none;
+  }
+
+  .image-element {
+    position: absolute;
+    cursor: move;
+    border: 1px dashed transparent;
+    pointer-events: auto;
+  }
+  
+  .image-element:hover {
+    border: 1px dashed #2196F3;
+  }
+
+  .image-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #2196F3;
+    pointer-events: none;
+  }
+
+  .delete-btn-image {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    pointer-events: auto;
+  }
+
+  .signature-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 35;
+    pointer-events: none;
+  }
+
+  .signature-element {
+    position: absolute;
+    cursor: move;
+    border: 1px dashed transparent;
+    pointer-events: auto;
+  }
+  
+  .signature-element:hover {
+    border: 1px dashed #2196F3;
+  }
+
+  .signature-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #2196F3;
+    pointer-events: none;
+  }
+  
+  .delete-btn-signature {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    pointer-events: auto;
+  }
+  
+  .resize-handle {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    width: 10px;
+    height: 10px;
+    background: #2196F3;
+    cursor: se-resize;
+    pointer-events: auto;
+  }
+
+  .text-layer {
   position: absolute;
   top: 0;
   left: 0;
@@ -1308,6 +2608,43 @@ const downloadBlob = (data, fileName, mimeType) => {
     display: block;
   }
 
+  .redact-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 28; /* Above whiteout (15), text (20), but below signature (35) */
+  }
+
+  .redact-element {
+    position: absolute;
+    background-color: black;
+  }
+  
+  .redact-element.drawing {
+    border: 1px dashed #000;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .redact-element:hover {
+    border: 1px dashed #fff;
+  }
+
+  .delete-btn-redact {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    display: none;
+  }
+
+  .redact-element:hover .delete-btn-redact {
+    display: block;
+  }
+
   .highlight-layer {
     position: absolute;
     top: 0;
@@ -1341,6 +2678,96 @@ const downloadBlob = (data, fileName, mimeType) => {
   }
 
   .highlight-element:hover .delete-btn-highlight {
+    display: block;
+  }
+
+  .strikeout-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 22; /* Above text (20) */
+  }
+
+  .strikeout-element {
+    position: absolute;
+    /* Transparent background, just the line */
+  }
+  
+  .strikeout-line {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: black;
+      transform: translateY(-50%);
+  }
+
+  .strikeout-element.drawing {
+    border: 1px dashed black;
+  }
+
+  .strikeout-element:hover {
+    border: 1px dashed black;
+  }
+
+  .underline-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 23; /* Above text (20) */
+  }
+
+  .underline-element {
+    position: absolute;
+  }
+  
+  .underline-line {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: black;
+  }
+
+  .underline-element.drawing {
+    border: 1px dashed black;
+  }
+
+  .underline-element:hover {
+    border: 1px dashed black;
+  }
+
+  .delete-btn-underline {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    display: none;
+  }
+
+  .underline-element:hover .delete-btn-underline {
+    display: block;
+  }
+
+  .delete-btn-strikeout {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    cursor: pointer;
+    background: white;
+    border-radius: 50%;
+    display: none;
+  }
+
+  .strikeout-element:hover .delete-btn-strikeout {
     display: block;
   }
 
@@ -1388,5 +2815,25 @@ const downloadBlob = (data, fileName, mimeType) => {
   .shape-element:hover .delete-btn-shape,
   .shape-element.is-selected .delete-btn-shape {
     display: block;
+  }
+
+  .watermark-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50; /* Top most */
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .watermark-element {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    white-space: nowrap;
+    font-weight: bold;
+    user-select: none;
   }
 </style>
