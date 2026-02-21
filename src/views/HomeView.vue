@@ -276,6 +276,25 @@
             </v-card>
           </v-hover>
         </v-col>
+
+        <!-- Protect PDF -->
+        <v-col cols="12" md="3">
+          <v-hover v-slot="{ isHovering, props }">
+            <v-card
+              v-bind="props"
+              :elevation="isHovering ? 4 : 1"
+              class="h-100 d-flex flex-column align-center justify-center pa-4 text-center cursor-pointer"
+              @click="handleOptionClick('protect')"
+              color="white"
+            >
+              <v-avatar color="grey-lighten-3" size="64" class="mb-3">
+                <v-icon icon="mdi-lock" color="grey-darken-3" size="32"></v-icon>
+              </v-avatar>
+              <div class="text-subtitle-1 font-weight-bold mb-1">Protect PDF</div>
+              <div class="text-caption text-grey">Set a password for your PDF</div>
+            </v-card>
+          </v-hover>
+        </v-col>
       </v-row>
     </div>
 
@@ -604,6 +623,53 @@
       </v-card>
     </v-dialog>
 
+    <!-- Protect Dialog -->
+    <v-dialog v-model="showProtectDialog" max-width="500" persistent>
+      <v-card class="rounded-lg elevation-4">
+        <v-card-title class="text-h5 pa-4 bg-grey-darken-3 text-white d-flex justify-space-between align-center">
+          <div class="font-weight-bold">
+            <v-icon icon="mdi-lock" class="mr-2"></v-icon>
+            Protect PDF
+          </div>
+          <v-btn icon="mdi-close" variant="text" color="white" @click="closeProtectDialog"></v-btn>
+        </v-card-title>
+        
+        <v-card-text class="pa-6">
+          <div class="text-subtitle-1 mb-4 text-grey-darken-2">
+            Set a password to protect your PDF file.
+          </div>
+          
+          <v-text-field
+            v-model="password"
+            label="Enter Password"
+            :type="showPassword ? 'text' : 'password'"
+            variant="outlined"
+            density="comfortable"
+            prepend-inner-icon="mdi-lock-outline"
+            :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+            @click:append-inner="showPassword = !showPassword"
+            class="mb-4"
+            hint="This password will be required to open the document."
+            persistent-hint
+          ></v-text-field>
+          
+          <v-btn
+            color="grey-darken-3"
+            height="48"
+            block
+            variant="flat"
+            :loading="isProtecting"
+            :disabled="!password"
+            @click="protectPdf"
+            class="text-white text-capitalize font-weight-bold mt-6"
+            elevation="2"
+          >
+            Protect PDF
+          </v-btn>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
     <!-- Snackbar for notifications -->
     <v-snackbar
       v-model="showSnackbar"
@@ -630,6 +696,7 @@ import { ref } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { PDFDocument } from 'pdf-lib'
+import { PDFDocument as PDFDocumentEncrypt } from 'pdf-lib-with-encrypt'
 import * as pdfjsLib from 'pdfjs-dist'
 
 // Set worker source
@@ -659,6 +726,12 @@ const filesToMerge = ref([])
 const mergeInput = ref(null)
 const isMerging = ref(false)
 const canRemoveFirstFile = ref(false) // Usually first file is the main uploaded file
+
+// Protect State
+const showProtectDialog = ref(false)
+const password = ref('')
+const showPassword = ref(false)
+const isProtecting = ref(false)
 
 const getFileIcon = (file) => {
     if (!file) return 'mdi-file'
@@ -789,6 +862,8 @@ const handleOptionClick = (action) => {
             convertPdfToImage('png')
         } else if (action === 'pdf-to-jpg') {
             convertPdfToImage('jpeg')
+        } else if (action === 'protect') {
+            showProtectDialog.value = true
         } else if (action === 'watermark') {
             router.push({ path: '/editor', query: { tool: 'watermark' } })
         } else {
@@ -1008,6 +1083,59 @@ const mergePdfs = async () => {
     } finally {
         isMerging.value = false
     }
+}
+
+const protectPdf = async () => {
+  if (!password.value || !selectedFile.value) return
+  isProtecting.value = true
+
+  try {
+    const arrayBuffer = await selectedFile.value.arrayBuffer()
+    const pdfDoc = await PDFDocumentEncrypt.load(arrayBuffer)
+    
+    console.log('PDFDocument loaded:', pdfDoc)
+    console.log('Available methods:', Object.getPrototypeOf(pdfDoc))
+    
+    if (typeof pdfDoc.encrypt !== 'function') {
+        throw new Error('Encryption is not supported by this version of pdf-lib or the document is invalid.')
+    }
+
+    // Encrypt the PDF
+    pdfDoc.encrypt({
+      userPassword: password.value,
+      ownerPassword: password.value,
+    })
+
+    const pdfBytes = await pdfDoc.save()
+    
+    // Download
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `protected_${selectedFile.value.name}`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    showSnackbar.value = true
+    snackbarText.value = 'PDF protected successfully!'
+    snackbarColor.value = 'success'
+    closeProtectDialog()
+
+  } catch (error) {
+    console.error('Protect PDF error:', error)
+    showSnackbar.value = true
+    snackbarText.value = 'Failed to protect PDF.'
+    snackbarColor.value = 'error'
+  } finally {
+    isProtecting.value = false
+  }
+}
+
+const closeProtectDialog = () => {
+  showProtectDialog.value = false
+  password.value = ''
+  showPassword.value = false
 }
 
 const removeFile = () => {
