@@ -631,7 +631,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import * as pdfjsLib from 'pdfjs-dist'
 import { PDFDocument, rgb, StandardFonts, pushGraphicsState, popGraphicsState, translate, rotate, degrees } from 'pdf-lib'
 
@@ -651,6 +651,7 @@ const hexToRgb = (hex) => {
 
 const store = useStore()
 const router = useRouter()
+const route = useRoute()
 const file = computed(() => store.getters.getFile)
 
 const pdfDoc = ref(null)
@@ -787,6 +788,12 @@ onMounted(async () => {
     await renderPage(pageNum.value)
     // Initial history push
     pushToHistory()
+
+    // Check for query parameters to open specific tools
+    if (route.query.tool === 'watermark') {
+        tool.value = 'watermark'
+        showWatermarkDialog.value = true
+    }
   } catch (error) {
     console.error('Error loading PDF:', error)
     alert('Failed to load PDF file.')

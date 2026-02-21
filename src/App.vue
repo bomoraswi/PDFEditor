@@ -19,7 +19,6 @@
         <v-divider class="my-4"></v-divider>
         
         <div class="pa-4">
-            <v-btn variant="outlined" block color="primary" class="mb-3">Log in</v-btn>
             <v-btn color="black" block flat class="text-white">Get Started</v-btn>
         </div>
       </v-list>
@@ -58,7 +57,6 @@
 
         <!-- Right Side Actions -->
         <div class="d-none d-md-flex align-center">
-            <v-btn variant="text" class="mr-2 text-capitalize font-weight-medium">Log in</v-btn>
             <v-btn color="black" class="text-white text-capitalize px-6" rounded="pill" elevation="0">Get Started</v-btn>
         </div>
 
@@ -87,11 +85,7 @@ import { ref } from 'vue'
 const drawer = ref(false)
 
 // Navigation items
-const items = ref([
-  { title: 'Home', to: '/' },
-  { title: 'Features', to: '/features' },
-  { title: 'Pricing', to: '/pricing' },
-])
+const items = ref([])
 </script>
 
 <style>
