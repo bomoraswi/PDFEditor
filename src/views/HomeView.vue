@@ -1,5 +1,8 @@
 <template>
-  <div class="d-flex flex-column w-100 bg-white align-center" style="min-height: 100vh;">
+  <div
+    class="d-flex flex-column w-100 bg-white align-center"
+    style="min-height: 100vh"
+  >
     <!-- Hero Text Section (Original) -->
     <div class="text-center mb-10 mt-10">
       <h1 class="text-h3 text-md-h2 font-weight-black mb-4">
@@ -28,7 +31,7 @@
         color="grey-darken-1"
         class="mb-4"
       ></v-icon>
-      
+
       <div class="text-h6 mb-6 font-weight-medium">
         Drop document here to upload
       </div>
@@ -44,24 +47,22 @@
         Select from device
       </v-btn>
 
-      <div class="text-caption text-grey text-center" style="max-width: 600px;">
+      <div class="text-caption text-grey text-center" style="max-width: 600px">
         Up to 100 MB for PDF, JPEG, PNG
       </div>
     </v-card>
 
     <!-- Selected File Display (Visible when file is selected) -->
-    <v-card
-      v-else
-      flat
-      border
-      class="w-100 pa-6 mt-10"
-      max-width="600"
-    >
+    <v-card v-else flat border class="w-100 pa-6 mt-10" max-width="600">
       <div class="d-flex align-center">
         <v-avatar color="primary-lighten-5" size="56" class="mr-4">
-          <v-icon :icon="getFileIcon(selectedFile)" color="primary" size="32"></v-icon>
+          <v-icon
+            :icon="getFileIcon(selectedFile)"
+            color="primary"
+            size="32"
+          ></v-icon>
         </v-avatar>
-        
+
         <div class="flex-grow-1 overflow-hidden">
           <div class="text-h6 text-truncate">{{ selectedFile.name }}</div>
           <div class="text-body-2 text-grey">
@@ -88,7 +89,9 @@
       <div v-if="isConverting" class="mt-6">
         <div class="d-flex justify-space-between mb-2">
           <span class="text-body-2 font-weight-medium">Processing...</span>
-          <span class="text-body-2 text-primary">{{ conversionProgress }}%</span>
+          <span class="text-body-2 text-primary"
+            >{{ conversionProgress }}%</span
+          >
         </div>
         <v-progress-linear
           v-model="conversionProgress"
@@ -101,11 +104,11 @@
     </v-card>
 
     <!-- Features/Options Section -->
-    <div class="w-100 mt-10" style="max-width: 1000px;">
+    <div class="w-100 mt-10" style="max-width: 1000px">
       <h3 class="text-h5 font-weight-bold text-center mb-6 text-grey-darken-3">
         Popular PDF Tools
       </h3>
-      
+
       <v-row>
         <!-- Sign & Edit -->
         <v-col cols="12" md="3">
@@ -120,8 +123,12 @@
               <v-avatar color="primary-lighten-5" size="64" class="mb-3">
                 <v-icon icon="mdi-draw" color="primary" size="32"></v-icon>
               </v-avatar>
-              <div class="text-subtitle-1 font-weight-bold mb-1">Sign & Edit</div>
-              <div class="text-caption text-grey">View, sign, and edit PDFs</div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">
+                Sign & Edit
+              </div>
+              <div class="text-caption text-grey">
+                View, sign, and edit PDFs
+              </div>
             </v-card>
           </v-hover>
         </v-col>
@@ -137,10 +144,18 @@
               color="white"
             >
               <v-avatar color="orange-lighten-5" size="64" class="mb-3">
-                <v-icon icon="mdi-file-word-box" color="orange-darken-2" size="32"></v-icon>
+                <v-icon
+                  icon="mdi-file-word-box"
+                  color="orange-darken-2"
+                  size="32"
+                ></v-icon>
               </v-avatar>
-              <div class="text-subtitle-1 font-weight-bold mb-1">Convert to Word</div>
-              <div class="text-caption text-grey">Convert PDF to editable Word</div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">
+                Convert to Word
+              </div>
+              <div class="text-caption text-grey">
+                Convert PDF to editable Word
+              </div>
             </v-card>
           </v-hover>
         </v-col>
@@ -156,9 +171,15 @@
               color="white"
             >
               <v-avatar color="teal-lighten-5" size="64" class="mb-3">
-                <v-icon icon="mdi-zip-box" color="teal-darken-2" size="32"></v-icon>
+                <v-icon
+                  icon="mdi-zip-box"
+                  color="teal-darken-2"
+                  size="32"
+                ></v-icon>
               </v-avatar>
-              <div class="text-subtitle-1 font-weight-bold mb-1">Compress PDF</div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">
+                Compress PDF
+              </div>
               <div class="text-caption text-grey">Reduce file size</div>
             </v-card>
           </v-hover>
@@ -175,7 +196,11 @@
               color="white"
             >
               <v-avatar color="indigo-lighten-5" size="64" class="mb-3">
-                <v-icon icon="mdi-watermark" color="indigo-darken-2" size="32"></v-icon>
+                <v-icon
+                  icon="mdi-watermark"
+                  color="indigo-darken-2"
+                  size="32"
+                ></v-icon>
               </v-avatar>
               <div class="text-subtitle-1 font-weight-bold mb-1">Watermark</div>
               <div class="text-caption text-grey">Add custom watermark</div>
@@ -193,7 +218,11 @@
               color="white"
             >
               <v-avatar color="purple-lighten-5" size="64" class="mb-3">
-                <v-icon icon="mdi-file-multiple" color="purple-darken-2" size="32"></v-icon>
+                <v-icon
+                  icon="mdi-file-multiple"
+                  color="purple-darken-2"
+                  size="32"
+                ></v-icon>
               </v-avatar>
               <div class="text-subtitle-1 font-weight-bold mb-1">Merge PDF</div>
               <div class="text-caption text-grey">Combine multiple PDFs</div>
@@ -212,10 +241,18 @@
               color="white"
             >
               <v-avatar color="green-lighten-5" size="64" class="mb-3">
-                <v-icon icon="mdi-file-image" color="green-darken-2" size="32"></v-icon>
+                <v-icon
+                  icon="mdi-file-image"
+                  color="green-darken-2"
+                  size="32"
+                ></v-icon>
               </v-avatar>
-              <div class="text-subtitle-1 font-weight-bold mb-1">PDF to PNG</div>
-              <div class="text-caption text-grey">Convert PDF to PNG images</div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">
+                PDF to PNG
+              </div>
+              <div class="text-caption text-grey">
+                Convert PDF to PNG images
+              </div>
             </v-card>
           </v-hover>
         </v-col>
@@ -231,10 +268,18 @@
               color="white"
             >
               <v-avatar color="red-lighten-5" size="64" class="mb-3">
-                <v-icon icon="mdi-file-pdf-box" color="red-darken-2" size="32"></v-icon>
+                <v-icon
+                  icon="mdi-file-pdf-box"
+                  color="red-darken-2"
+                  size="32"
+                ></v-icon>
               </v-avatar>
-              <div class="text-subtitle-1 font-weight-bold mb-1">PNG to PDF</div>
-              <div class="text-caption text-grey">Convert PNG images to PDF</div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">
+                PNG to PDF
+              </div>
+              <div class="text-caption text-grey">
+                Convert PNG images to PDF
+              </div>
             </v-card>
           </v-hover>
         </v-col>
@@ -250,10 +295,18 @@
               color="white"
             >
               <v-avatar color="blue-lighten-5" size="64" class="mb-3">
-                <v-icon icon="mdi-file-image" color="blue-darken-2" size="32"></v-icon>
+                <v-icon
+                  icon="mdi-file-image"
+                  color="blue-darken-2"
+                  size="32"
+                ></v-icon>
               </v-avatar>
-              <div class="text-subtitle-1 font-weight-bold mb-1">PDF to JPG</div>
-              <div class="text-caption text-grey">Convert PDF to JPG images</div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">
+                PDF to JPG
+              </div>
+              <div class="text-caption text-grey">
+                Convert PDF to JPG images
+              </div>
             </v-card>
           </v-hover>
         </v-col>
@@ -269,10 +322,18 @@
               color="white"
             >
               <v-avatar color="orange-lighten-5" size="64" class="mb-3">
-                <v-icon icon="mdi-file-pdf-box" color="orange-darken-2" size="32"></v-icon>
+                <v-icon
+                  icon="mdi-file-pdf-box"
+                  color="orange-darken-2"
+                  size="32"
+                ></v-icon>
               </v-avatar>
-              <div class="text-subtitle-1 font-weight-bold mb-1">JPG to PDF</div>
-              <div class="text-caption text-grey">Convert JPG images to PDF</div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">
+                JPG to PDF
+              </div>
+              <div class="text-caption text-grey">
+                Convert JPG images to PDF
+              </div>
             </v-card>
           </v-hover>
         </v-col>
@@ -288,10 +349,18 @@
               color="white"
             >
               <v-avatar color="grey-lighten-3" size="64" class="mb-3">
-                <v-icon icon="mdi-lock" color="grey-darken-3" size="32"></v-icon>
+                <v-icon
+                  icon="mdi-lock"
+                  color="grey-darken-3"
+                  size="32"
+                ></v-icon>
               </v-avatar>
-              <div class="text-subtitle-1 font-weight-bold mb-1">Protect PDF</div>
-              <div class="text-caption text-grey">Set a password for your PDF</div>
+              <div class="text-subtitle-1 font-weight-bold mb-1">
+                Protect PDF
+              </div>
+              <div class="text-caption text-grey">
+                Set a password for your PDF
+              </div>
             </v-card>
           </v-hover>
         </v-col>
@@ -301,7 +370,7 @@
     <!-- New Dark Hero Section (Bottom) -->
     <div
       class="bg-black py-16 position-relative d-flex align-center mt-16 rounded-xl mx-4 mb-4"
-      style="min-height: 600px; width: calc(100% - 32px);"
+      style="min-height: 600px; width: calc(100% - 32px)"
       @drop.prevent="handleDrop"
       @dragover.prevent
       @dragenter.prevent
@@ -310,11 +379,18 @@
         <v-row align="center">
           <!-- Left Column: Text & CTA -->
           <v-col cols="12" md="6" class="text-left">
-            <h1 class="text-h3 text-md-h2 font-weight-black mb-6 text-white" style="line-height: 1.2;">
+            <h1
+              class="text-h3 text-md-h2 font-weight-black mb-6 text-white"
+              style="line-height: 1.2"
+            >
               Edit PDFs easily with a complete all-in-one solution.
             </h1>
-            <p class="text-h6 text-grey-lighten-1 mb-8" style="font-weight: 400; max-width: 500px;">
-              Handle, organize, and control your documents effortlessly with one smart digital platform.
+            <p
+              class="text-h6 text-grey-lighten-1 mb-8"
+              style="font-weight: 400; max-width: 500px"
+            >
+              Handle, organize, and control your documents effortlessly with one
+              smart digital platform.
             </p>
             <v-btn
               color="orange-darken-1"
@@ -326,123 +402,236 @@
             >
               Upload document
             </v-btn>
-            
+
             <div class="mt-4 text-grey-darken-2 text-caption">
-                or drop files here
+              or drop files here
             </div>
 
-            <div class="text-caption text-grey-darken-2 mt-2" style="max-width: 600px;">
+            <div
+              class="text-caption text-grey-darken-2 mt-2"
+              style="max-width: 600px"
+            >
               Up to 100 MB for PDF, JPEG, PNG
             </div>
           </v-col>
 
           <!-- Right Column: Mock Editor Graphic -->
           <v-col cols="12" md="6" class="d-none d-md-block">
-             <div class="mock-editor-container position-relative">
-                <!-- Mock Editor Window -->
-                <v-card class="rounded-lg overflow-hidden" elevation="10" border theme="light">
-                   <!-- Mock Toolbar -->
-                   <div class="bg-grey-lighten-4 pa-2 d-flex align-center gap-2 border-b">
-                      <v-btn size="small" variant="text" icon="mdi-file-document-outline" color="grey-darken-2"></v-btn>
-                      <v-divider vertical class="mx-1"></v-divider>
-                      <v-btn size="small" variant="text" icon="mdi-undo" color="grey-darken-2"></v-btn>
-                      <v-btn size="small" variant="text" icon="mdi-redo" color="grey-darken-2"></v-btn>
-                      <v-spacer></v-spacer>
-                      <v-btn size="small" variant="text" class="text-capitalize text-grey-darken-2">
-                        <v-icon start icon="mdi-cursor-default-outline"></v-icon> Select
-                      </v-btn>
-                      <v-btn size="small" variant="text" class="text-capitalize text-grey-darken-2">
-                        <v-icon start icon="mdi-format-text"></v-icon> Text
-                      </v-btn>
-                      <v-btn size="small" tonal color="primary" class="text-capitalize bg-blue-lighten-5">
-                        <v-icon start icon="mdi-draw"></v-icon> Sign
-                      </v-btn>
-                   </div>
-                   <!-- Mock Canvas -->
-                   <div class="bg-grey-lighten-3 pa-4" style="height: 350px; overflow: hidden; position: relative;">
-                      <v-sheet class="mx-auto pa-8 text-body-2 text-grey-darken-2" width="100%" height="100%" elevation="2">
-                         <div class="text-h6 text-black mb-4">SaMo Eats</div>
-                         <p class="mb-2">Samo Eats is a local food delivery service that connects customers with nearby restaurants and delivers meals straight to their door.</p>
-                         <p>Download: <span class="bg-blue-lighten-4 px-1 text-black">SaMo Eat App</span></p>
-                         
-                         <div class="mt-10 d-flex justify-space-between align-end">
-                            <div class="border-b w-25 pb-1">Client Signature</div>
-                            <div class="border-b w-25 pb-1">Date</div>
-                         </div>
-                         
-                         <!-- Mock Signature Placement -->
-                         <div class="position-absolute" style="bottom: 80px; left: 60px;">
-                            <div class="border-dashed border-primary bg-yellow-lighten-5 px-4 py-2 text-h5 font-italic" style="border-width: 2px !important; color: black; font-family: cursive;">
-                                Jerry K.
-                                <div class="position-absolute bg-white rounded-circle border border-primary" style="width: 10px; height: 10px; top: -5px; right: -5px;"></div>
-                            </div>
-                         </div>
-                      </v-sheet>
-                   </div>
-                </v-card>
+            <div class="mock-editor-container position-relative">
+              <!-- Mock Editor Window -->
+              <v-card
+                class="rounded-lg overflow-hidden"
+                elevation="10"
+                border
+                theme="light"
+              >
+                <!-- Mock Toolbar -->
+                <div
+                  class="bg-grey-lighten-4 pa-2 d-flex align-center gap-2 border-b"
+                >
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    icon="mdi-file-document-outline"
+                    color="grey-darken-2"
+                  ></v-btn>
+                  <v-divider vertical class="mx-1"></v-divider>
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    icon="mdi-undo"
+                    color="grey-darken-2"
+                  ></v-btn>
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    icon="mdi-redo"
+                    color="grey-darken-2"
+                  ></v-btn>
+                  <v-spacer></v-spacer>
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    class="text-capitalize text-grey-darken-2"
+                  >
+                    <v-icon start icon="mdi-cursor-default-outline"></v-icon>
+                    Select
+                  </v-btn>
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    class="text-capitalize text-grey-darken-2"
+                  >
+                    <v-icon start icon="mdi-format-text"></v-icon> Text
+                  </v-btn>
+                  <v-btn
+                    size="small"
+                    tonal
+                    color="primary"
+                    class="text-capitalize bg-blue-lighten-5"
+                  >
+                    <v-icon start icon="mdi-draw"></v-icon> Sign
+                  </v-btn>
+                </div>
+                <!-- Mock Canvas -->
+                <div
+                  class="bg-grey-lighten-3 pa-4"
+                  style="height: 350px; overflow: hidden; position: relative"
+                >
+                  <v-sheet
+                    class="mx-auto pa-8 text-body-2 text-grey-darken-2"
+                    width="100%"
+                    height="100%"
+                    elevation="2"
+                  >
+                    <div class="text-h6 text-black mb-4">SaMo Eats</div>
+                    <p class="mb-2">
+                      Samo Eats is a local food delivery service that connects
+                      customers with nearby restaurants and delivers meals
+                      straight to their door.
+                    </p>
+                    <p>
+                      Download:
+                      <span class="bg-blue-lighten-4 px-1 text-black"
+                        >SaMo Eat App</span
+                      >
+                    </p>
 
-                <!-- Mock Type Signature Dialog (Floating) -->
-                <v-card class="position-absolute rounded-lg elevation-24" width="280" style="bottom: -20px; left: -20px;" theme="light">
-                   <div class="pa-3 border-b d-flex justify-space-between align-center">
-                      <span class="text-subtitle-2 font-weight-bold text-black">Type signature</span>
-                      <v-icon size="small" icon="mdi-close" color="grey"></v-icon>
-                   </div>
-                   <div class="pa-4 bg-grey-lighten-5">
-                      <v-text-field
-                        model-value="Jerry K"
-                        variant="outlined"
-                        density="compact"
-                        bg-color="white"
-                        hide-details
-                        class="mb-3"
-                        color="primary"
-                      ></v-text-field>
-                      <div class="text-h4 text-center font-italic py-2 text-black" style="font-family: cursive;">
-                         Jerry K.
+                    <div class="mt-10 d-flex justify-space-between align-end">
+                      <div class="border-b w-25 pb-1">Client Signature</div>
+                      <div class="border-b w-25 pb-1">Date</div>
+                    </div>
+
+                    <!-- Mock Signature Placement -->
+                    <div
+                      class="position-absolute"
+                      style="bottom: 80px; left: 60px"
+                    >
+                      <div
+                        class="border-dashed border-primary bg-yellow-lighten-5 px-4 py-2 text-h5 font-italic"
+                        style="
+                          border-width: 2px !important;
+                          color: black;
+                          font-family: cursive;
+                        "
+                      >
+                        Jerry K.
+                        <div
+                          class="position-absolute bg-white rounded-circle border border-primary"
+                          style="
+                            width: 10px;
+                            height: 10px;
+                            top: -5px;
+                            right: -5px;
+                          "
+                        ></div>
                       </div>
-                   </div>
-                </v-card>
-             </div>
+                    </div>
+                  </v-sheet>
+                </div>
+              </v-card>
+
+              <!-- Mock Type Signature Dialog (Floating) -->
+              <v-card
+                class="position-absolute rounded-lg elevation-24"
+                width="280"
+                style="bottom: -20px; left: -20px"
+                theme="light"
+              >
+                <div
+                  class="pa-3 border-b d-flex justify-space-between align-center"
+                >
+                  <span class="text-subtitle-2 font-weight-bold text-black"
+                    >Type signature</span
+                  >
+                  <v-icon size="small" icon="mdi-close" color="grey"></v-icon>
+                </div>
+                <div class="pa-4 bg-grey-lighten-5">
+                  <v-text-field
+                    model-value="Jerry K"
+                    variant="outlined"
+                    density="compact"
+                    bg-color="white"
+                    hide-details
+                    class="mb-3"
+                    color="primary"
+                  ></v-text-field>
+                  <div
+                    class="text-h4 text-center font-italic py-2 text-black"
+                    style="font-family: cursive"
+                  >
+                    Jerry K.
+                  </div>
+                </div>
+              </v-card>
+            </div>
           </v-col>
         </v-row>
       </v-container>
-      
+
       <!-- Hidden File Input (Duplicated logic for this section's button) -->
       <!-- Note: We can reuse the same refs and handlers -->
     </div>
 
     <!-- Informational Content Section -->
-    <v-container class="py-16" style="max-width: 1000px;">
+    <v-container class="py-16" style="max-width: 1000px">
       <!-- What is PDF Editor -->
       <div class="mb-12">
-        <h2 class="text-h4 font-weight-bold mb-6 text-grey-darken-3">What is PDF Editor?</h2>
-        <p class="text-body-1 text-grey-darken-1" style="line-height: 1.8;">
-          PDF Editor is an online platform that allows users to easily create, edit, manage, and share PDF documents. It provides powerful tools that help individuals and businesses modify PDF files without needing complex software.
+        <h2 class="text-h4 font-weight-bold mb-6 text-grey-darken-3">
+          What is PDF Editor?
+        </h2>
+        <p class="text-body-1 text-grey-darken-1" style="line-height: 1.8">
+          PDF Editor is an online platform that allows users to easily create,
+          edit, manage, and share PDF documents. It provides powerful tools that
+          help individuals and businesses modify PDF files without needing
+          complex software.
         </p>
       </div>
 
       <!-- Usability -->
       <div class="mb-12">
-        <h3 class="text-h5 font-weight-bold mb-4 text-grey-darken-3 d-flex align-center">
-          <span class="mr-2">📘</span> Why does PDF Editor enhance document usability?
+        <h3
+          class="text-h5 font-weight-bold mb-4 text-grey-darken-3 d-flex align-center"
+        >
+          <span class="mr-2">📘</span> Why does PDF Editor enhance document
+          usability?
         </h3>
         <p class="text-body-1 text-grey-darken-1 mb-4">
           PDF Editor enhances document usability by making documents:
         </p>
         <v-list density="compact" class="bg-transparent mb-4">
-          <v-list-item prepend-icon="mdi-check-circle" class="text-grey-darken-1">Easy to edit and update</v-list-item>
-          <v-list-item prepend-icon="mdi-check-circle" class="text-grey-darken-1">Accessible from anywhere (online access)</v-list-item>
-          <v-list-item prepend-icon="mdi-check-circle" class="text-grey-darken-1">Simple to fill, sign, and share</v-list-item>
-          <v-list-item prepend-icon="mdi-check-circle" class="text-grey-darken-1">More interactive and professional</v-list-item>
+          <v-list-item
+            prepend-icon="mdi-check-circle"
+            class="text-grey-darken-1"
+            >Easy to edit and update</v-list-item
+          >
+          <v-list-item
+            prepend-icon="mdi-check-circle"
+            class="text-grey-darken-1"
+            >Accessible from anywhere (online access)</v-list-item
+          >
+          <v-list-item
+            prepend-icon="mdi-check-circle"
+            class="text-grey-darken-1"
+            >Simple to fill, sign, and share</v-list-item
+          >
+          <v-list-item
+            prepend-icon="mdi-check-circle"
+            class="text-grey-darken-1"
+            >More interactive and professional</v-list-item
+          >
         </v-list>
         <p class="text-body-1 text-grey-darken-1">
-          Instead of recreating documents from scratch, users can quickly make changes and improve document efficiency.
+          Instead of recreating documents from scratch, users can quickly make
+          changes and improve document efficiency.
         </p>
       </div>
 
       <!-- Benefits -->
       <div class="mb-12">
-        <h3 class="text-h5 font-weight-bold mb-4 text-grey-darken-3 d-flex align-center">
+        <h3
+          class="text-h5 font-weight-bold mb-4 text-grey-darken-3 d-flex align-center"
+        >
           <span class="mr-2">📘</span> Benefits of PDF Editor’s editing tools
         </h3>
         <p class="text-body-1 text-grey-darken-1 mb-4">
@@ -452,15 +641,21 @@
           <v-col cols="12" md="6">
             <v-list density="compact" class="bg-transparent">
               <v-list-item class="text-grey-darken-1">
-                <template v-slot:prepend><span class="mr-2 text-h6">✏️</span></template>
+                <template v-slot:prepend
+                  ><span class="mr-2 text-h6">✏️</span></template
+                >
                 Edit text directly inside PDFs
               </v-list-item>
               <v-list-item class="text-grey-darken-1">
-                <template v-slot:prepend><span class="mr-2 text-h6">🖼️</span></template>
+                <template v-slot:prepend
+                  ><span class="mr-2 text-h6">🖼️</span></template
+                >
                 Add, remove, or resize images
               </v-list-item>
               <v-list-item class="text-grey-darken-1">
-                <template v-slot:prepend><span class="mr-2 text-h6">✍️</span></template>
+                <template v-slot:prepend
+                  ><span class="mr-2 text-h6">✍️</span></template
+                >
                 Insert electronic signatures
               </v-list-item>
             </v-list>
@@ -468,15 +663,21 @@
           <v-col cols="12" md="6">
             <v-list density="compact" class="bg-transparent">
               <v-list-item class="text-grey-darken-1">
-                <template v-slot:prepend><span class="mr-2 text-h6">📑</span></template>
+                <template v-slot:prepend
+                  ><span class="mr-2 text-h6">📑</span></template
+                >
                 Create and fill out forms
               </v-list-item>
               <v-list-item class="text-grey-darken-1">
-                <template v-slot:prepend><span class="mr-2 text-h6">🔒</span></template>
+                <template v-slot:prepend
+                  ><span class="mr-2 text-h6">🔒</span></template
+                >
                 Secure documents with password protection
               </v-list-item>
               <v-list-item class="text-grey-darken-1">
-                <template v-slot:prepend><span class="mr-2 text-h6">📤</span></template>
+                <template v-slot:prepend
+                  ><span class="mr-2 text-h6">📤</span></template
+                >
                 Download or share instantly
               </v-list-item>
             </v-list>
@@ -489,47 +690,77 @@
 
       <!-- Why Choose -->
       <div class="mb-12">
-        <h3 class="text-h5 font-weight-bold mb-4 text-grey-darken-3 d-flex align-center">
-          <span class="mr-2">📘</span> Why choose PDF Editor for your document needs?
+        <h3
+          class="text-h5 font-weight-bold mb-4 text-grey-darken-3 d-flex align-center"
+        >
+          <span class="mr-2">📘</span> Why choose PDF Editor for your document
+          needs?
         </h3>
         <p class="text-body-1 text-grey-darken-1 mb-4">
           You should choose PDF Editor because:
         </p>
         <v-list density="compact" class="bg-transparent mb-4">
-          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1">It is user-friendly and simple to use</v-list-item>
-          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1">It works online without complicated installations</v-list-item>
-          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1">It keeps your document formatting intact</v-list-item>
-          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1">It provides secure and reliable document handling</v-list-item>
-          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1">It is suitable for students, professionals, and businesses</v-list-item>
+          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1"
+            >It is user-friendly and simple to use</v-list-item
+          >
+          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1"
+            >It works online without complicated installations</v-list-item
+          >
+          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1"
+            >It keeps your document formatting intact</v-list-item
+          >
+          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1"
+            >It provides secure and reliable document handling</v-list-item
+          >
+          <v-list-item prepend-icon="mdi-star" class="text-grey-darken-1"
+            >It is suitable for students, professionals, and
+            businesses</v-list-item
+          >
         </v-list>
         <p class="text-body-1 text-grey-darken-1">
-          PDF Editor helps you manage your documents faster and more efficiently.
+          PDF Editor helps you manage your documents faster and more
+          efficiently.
         </p>
       </div>
 
       <!-- How To -->
       <div class="mb-12">
-        <h3 class="text-h5 font-weight-bold mb-4 text-grey-darken-3 d-flex align-center">
-          <span class="mr-2">📘</span> How to edit a PDF document using PDF Editor
+        <h3
+          class="text-h5 font-weight-bold mb-4 text-grey-darken-3 d-flex align-center"
+        >
+          <span class="mr-2">📘</span> How to edit a PDF document using PDF
+          Editor
         </h3>
         <v-timeline density="compact" side="end" class="text-left">
           <v-timeline-item dot-color="orange-darken-1" size="x-small">
-            <div class="text-body-1 text-grey-darken-1">Visit the PDF Editor website.</div>
+            <div class="text-body-1 text-grey-darken-1">
+              Visit the PDF Editor website.
+            </div>
           </v-timeline-item>
           <v-timeline-item dot-color="orange-darken-1" size="x-small">
-            <div class="text-body-1 text-grey-darken-1">Upload your PDF file.</div>
+            <div class="text-body-1 text-grey-darken-1">
+              Upload your PDF file.
+            </div>
           </v-timeline-item>
           <v-timeline-item dot-color="orange-darken-1" size="x-small">
-            <div class="text-body-1 text-grey-darken-1">Select the editing tools you need (text, image, signature, etc.).</div>
+            <div class="text-body-1 text-grey-darken-1">
+              Select the editing tools you need (text, image, signature, etc.).
+            </div>
           </v-timeline-item>
           <v-timeline-item dot-color="orange-darken-1" size="x-small">
-            <div class="text-body-1 text-grey-darken-1">Make the required changes.</div>
+            <div class="text-body-1 text-grey-darken-1">
+              Make the required changes.
+            </div>
           </v-timeline-item>
           <v-timeline-item dot-color="orange-darken-1" size="x-small">
-            <div class="text-body-1 text-grey-darken-1">Save your updated document.</div>
+            <div class="text-body-1 text-grey-darken-1">
+              Save your updated document.
+            </div>
           </v-timeline-item>
           <v-timeline-item dot-color="green" size="small" icon="mdi-check">
-            <div class="text-body-1 text-grey-darken-1 font-weight-bold">Download or share the edited file.</div>
+            <div class="text-body-1 text-grey-darken-1 font-weight-bold">
+              Download or share the edited file.
+            </div>
           </v-timeline-item>
         </v-timeline>
       </div>
@@ -540,37 +771,89 @@
       <v-container>
         <v-row>
           <v-col cols="12" md="4">
-            <div class="text-h5 font-weight-bold text-white mb-4">PDF Editor</div>
-            <p class="text-grey-lighten-1 text-body-2 mb-6" style="max-width: 300px;">
-              The smartest way to manage your documents. Secure, fast, and easy to use.
+            <div class="text-h5 font-weight-bold text-white mb-4">
+              PDF Editor
+            </div>
+            <p
+              class="text-grey-lighten-1 text-body-2 mb-6"
+              style="max-width: 300px"
+            >
+              The smartest way to manage your documents. Secure, fast, and easy
+              to use.
             </p>
             <div class="d-flex gap-4">
-              <v-btn icon="mdi-facebook" variant="text" color="grey-lighten-1" size="small"></v-btn>
-              <v-btn icon="mdi-twitter" variant="text" color="grey-lighten-1" size="small"></v-btn>
-              <v-btn icon="mdi-instagram" variant="text" color="grey-lighten-1" size="small"></v-btn>
-              <v-btn icon="mdi-linkedin" variant="text" color="grey-lighten-1" size="small"></v-btn>
+              <v-btn
+                icon="mdi-facebook"
+                variant="text"
+                color="grey-lighten-1"
+                size="small"
+              ></v-btn>
+              <v-btn
+                icon="mdi-twitter"
+                variant="text"
+                color="grey-lighten-1"
+                size="small"
+              ></v-btn>
+              <v-btn
+                icon="mdi-instagram"
+                variant="text"
+                color="grey-lighten-1"
+                size="small"
+              ></v-btn>
+              <v-btn
+                icon="mdi-linkedin"
+                variant="text"
+                color="grey-lighten-1"
+                size="small"
+              ></v-btn>
             </div>
           </v-col>
-          
+
           <v-col cols="6" md="2">
-            <div class="text-subtitle-1 font-weight-bold text-white mb-4">Product</div>
+            <div class="text-subtitle-1 font-weight-bold text-white mb-4">
+              Product
+            </div>
             <div class="d-flex flex-column gap-2">
-              <a href="#" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Features</a>
-              <a href="#" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Pricing</a>
+              <a
+                href="#"
+                class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2"
+                >Features</a
+              >
+              <a
+                href="#"
+                class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2"
+                >Pricing</a
+              >
             </div>
           </v-col>
-          
+
           <v-col cols="6" md="2">
-            <div class="text-subtitle-1 font-weight-bold text-white mb-4">Support</div>
+            <div class="text-subtitle-1 font-weight-bold text-white mb-4">
+              Support
+            </div>
             <div class="d-flex flex-column gap-2">
-              <a href="mailto:moraswip97@gmail.com" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Help Center</a>
-              <a href="mailto:moraswip97@gmail.com" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Contact Us</a>
-              <a href="#" class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2">Status</a>
+              <a
+                href="mailto:moraswip97@gmail.com"
+                class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2"
+                >Help Center</a
+              >
+              <a
+                href="mailto:moraswip97@gmail.com"
+                class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2"
+                >Contact Us</a
+              >
+              <a
+                href="#"
+                class="text-grey-lighten-1 text-decoration-none text-body-2 mb-2"
+                >Status</a
+              >
             </div>
           </v-col>
-          
+
           <v-col cols="12" md="4">
-            <div class="text-subtitle-1 font-weight-bold text-white mb-4">Subscribe</div>
+            <div class="text-subtitle-1 font-weight-bold text-white mb-4">
+              Subscribe
+            </div>
             <p class="text-grey-lighten-1 text-body-2 mb-4">
               Subscribe to our newsletter for the latest updates.
             </p>
@@ -584,23 +867,33 @@
               rounded="lg"
             >
               <template v-slot:append-inner>
-                <v-btn size="small" color="orange-darken-1" class="text-white" icon="mdi-arrow-right" variant="flat"></v-btn>
+                <v-btn
+                  size="small"
+                  color="orange-darken-1"
+                  class="text-white"
+                  icon="mdi-arrow-right"
+                  variant="flat"
+                ></v-btn>
               </template>
             </v-text-field>
           </v-col>
         </v-row>
-        
-        <v-divider class="my-8 border-opacity-25" color="grey-lighten-1"></v-divider>
-        
-        <div class="d-flex flex-column flex-md-row justify-space-between align-center text-caption text-grey-darken-1">
+
+        <v-divider
+          class="my-8 border-opacity-25"
+          color="grey-lighten-1"
+        ></v-divider>
+
+        <div
+          class="d-flex flex-column flex-md-row justify-space-between align-center text-caption text-grey-darken-1"
+        >
           <div class="mb-2 mb-md-0">
             © 2026 PDF Editor. All rights reserved.
           </div>
-  
         </div>
       </v-container>
     </div>
-    
+
     <!-- Shared Hidden Inputs -->
     <input
       type="file"
@@ -623,60 +916,92 @@
     <!-- Merge Dialog -->
     <v-dialog v-model="showMergeDialog" max-width="600" persistent>
       <v-card class="rounded-lg elevation-4">
-        <v-card-title class="text-h5 pa-4 bg-orange-darken-1 text-white d-flex justify-space-between align-center">
+        <v-card-title
+          class="text-h5 pa-4 bg-orange-darken-1 text-white d-flex justify-space-between align-center"
+        >
           <div class="font-weight-bold">
             <v-icon icon="mdi-file-multiple" class="mr-2"></v-icon>
             Merge PDFs
           </div>
-          <v-btn icon="mdi-close" variant="text" color="white" @click="closeMergeDialog"></v-btn>
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            color="white"
+            @click="closeMergeDialog"
+          ></v-btn>
         </v-card-title>
-        
+
         <v-card-text class="pa-6">
-          <div class="text-subtitle-1 mb-4 text-grey-darken-2 font-weight-medium">
+          <div
+            class="text-subtitle-1 mb-4 text-grey-darken-2 font-weight-medium"
+          >
             Files to be merged:
           </div>
-          
-          <v-list lines="one" class="bg-grey-lighten-4 rounded-lg mb-6 border" elevation="0">
-            <v-list-item v-for="(file, index) in filesToMerge" :key="index" class="py-2">
+
+          <v-list
+            lines="one"
+            class="bg-grey-lighten-4 rounded-lg mb-6 border"
+            elevation="0"
+          >
+            <v-list-item
+              v-for="(file, index) in filesToMerge"
+              :key="index"
+              class="py-2"
+            >
               <template v-slot:prepend>
                 <v-avatar color="white" class="mr-2" size="40">
-                    <v-icon icon="mdi-file-pdf-box" color="error" size="24"></v-icon>
+                  <v-icon
+                    icon="mdi-file-pdf-box"
+                    color="error"
+                    size="24"
+                  ></v-icon>
                 </v-avatar>
               </template>
-              <v-list-item-title class="font-weight-medium">{{ file.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ formatFileSize(file.size) }}</v-list-item-subtitle>
+              <v-list-item-title class="font-weight-medium">{{
+                file.name
+              }}</v-list-item-title>
+              <v-list-item-subtitle>{{
+                formatFileSize(file.size)
+              }}</v-list-item-subtitle>
               <template v-slot:append>
-                <v-btn icon="mdi-close-circle" variant="text" density="comfortable" color="grey-darken-1" @click="removeMergeFile(index)" :disabled="index === 0 && !canRemoveFirstFile"></v-btn>
+                <v-btn
+                  icon="mdi-close-circle"
+                  variant="text"
+                  density="comfortable"
+                  color="grey-darken-1"
+                  @click="removeMergeFile(index)"
+                  :disabled="index === 0 && !canRemoveFirstFile"
+                ></v-btn>
               </template>
             </v-list-item>
           </v-list>
-          
+
           <div class="d-flex gap-3">
-              <v-btn
-                variant="outlined"
-                color="orange-darken-1"
-                prepend-icon="mdi-plus"
-                height="48"
-                class="text-capitalize font-weight-bold flex-grow-1"
-                @click="triggerMergeInput"
-              >
-                Add Another File
-              </v-btn>
-              
-              <v-btn
-                color="orange-darken-1"
-                height="48"
-                variant="flat"
-                :loading="isMerging"
-                :disabled="filesToMerge.length < 2"
-                @click="mergePdfs"
-                class="text-white text-capitalize font-weight-bold flex-grow-1"
-                elevation="2"
-              >
-                Combine
-              </v-btn>
+            <v-btn
+              variant="outlined"
+              color="orange-darken-1"
+              prepend-icon="mdi-plus"
+              height="48"
+              class="text-capitalize font-weight-bold flex-grow-1"
+              @click="triggerMergeInput"
+            >
+              Add Another File
+            </v-btn>
+
+            <v-btn
+              color="orange-darken-1"
+              height="48"
+              variant="flat"
+              :loading="isMerging"
+              :disabled="filesToMerge.length < 2"
+              @click="mergePdfs"
+              class="text-white text-capitalize font-weight-bold flex-grow-1"
+              elevation="2"
+            >
+              Combine
+            </v-btn>
           </div>
-          
+
           <input
             type="file"
             ref="mergeInput"
@@ -692,19 +1017,26 @@
     <!-- Protect Dialog -->
     <v-dialog v-model="showProtectDialog" max-width="500" persistent>
       <v-card class="rounded-lg elevation-4">
-        <v-card-title class="text-h5 pa-4 bg-grey-darken-3 text-white d-flex justify-space-between align-center">
+        <v-card-title
+          class="text-h5 pa-4 bg-grey-darken-3 text-white d-flex justify-space-between align-center"
+        >
           <div class="font-weight-bold">
             <v-icon icon="mdi-lock" class="mr-2"></v-icon>
             Protect PDF
           </div>
-          <v-btn icon="mdi-close" variant="text" color="white" @click="closeProtectDialog"></v-btn>
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            color="white"
+            @click="closeProtectDialog"
+          ></v-btn>
         </v-card-title>
-        
+
         <v-card-text class="pa-6">
           <div class="text-subtitle-1 mb-4 text-grey-darken-2">
             Set a password to protect your PDF file.
           </div>
-          
+
           <v-text-field
             v-model="password"
             label="Enter Password"
@@ -718,7 +1050,7 @@
             hint="This password will be required to open the document."
             persistent-hint
           ></v-text-field>
-          
+
           <v-btn
             color="grey-darken-3"
             height="48"
@@ -745,11 +1077,7 @@
     >
       {{ snackbarText }}
       <template v-slot:actions>
-        <v-btn
-          color="white"
-          variant="text"
-          @click="showSnackbar = false"
-        >
+        <v-btn color="white" variant="text" @click="showSnackbar = false">
           Close
         </v-btn>
       </template>
@@ -758,467 +1086,651 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
-import { PDFDocument } from 'pdf-lib'
-import * as pdfjsLib from 'pdfjs-dist'
+import { ref } from "vue";
+import { useStore } from "vuex";
+import { useRouter } from "vue-router";
+import { PDFDocument } from "pdf-lib";
+import * as pdfjsLib from "pdfjs-dist";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  AlignmentType,
+  PageBreak,
+} from "docx";
 
 // Set worker source
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
-const store = useStore()
-const router = useRouter()
+const store = useStore();
+const router = useRouter();
 
-const fileInput = ref(null)
-const selectedFile = ref(null)
-const isConverting = ref(false)
-const conversionProgress = ref(0)
-const conversionComplete = ref(false)
-const convertedPages = ref([])
+const fileInput = ref(null);
+const selectedFile = ref(null);
+const isConverting = ref(false);
+const conversionProgress = ref(0);
+const conversionComplete = ref(false);
+const convertedPages = ref([]);
 
 // Snackbar state
-const showSnackbar = ref(false)
-const snackbarText = ref('')
-const snackbarColor = ref('info')
+const showSnackbar = ref(false);
+const snackbarText = ref("");
+const snackbarColor = ref("info");
 
 // Selected Images for PNG to PDF
-const selectedImages = ref([])
+const selectedImages = ref([]);
 
 // Merge State
-const showMergeDialog = ref(false)
-const filesToMerge = ref([])
-const mergeInput = ref(null)
-const isMerging = ref(false)
-const canRemoveFirstFile = ref(false) // Usually first file is the main uploaded file
+const showMergeDialog = ref(false);
+const filesToMerge = ref([]);
+const mergeInput = ref(null);
+const isMerging = ref(false);
+const canRemoveFirstFile = ref(false); // Usually first file is the main uploaded file
 
 // Protect State
-const showProtectDialog = ref(false)
-const password = ref('')
-const showPassword = ref(false)
-const isProtecting = ref(false)
+const showProtectDialog = ref(false);
+const password = ref("");
+const showPassword = ref(false);
+const isProtecting = ref(false);
 
 const getFileIcon = (file) => {
-    if (!file) return 'mdi-file'
-    const type = file.type
-    const name = file.name.toLowerCase()
-    
-    if (type === 'application/pdf' || name.endsWith('.pdf')) return 'mdi-file-pdf-box'
-    if (['image/png', 'image/jpeg', 'image/jpg'].includes(type) || name.match(/\.(png|jpg|jpeg|jfif)$/)) return 'mdi-file-image'
-    if (name.endsWith('.doc') || name.endsWith('.docx') || name.endsWith('.rtf')) return 'mdi-file-word-box'
-    if (name.endsWith('.ppt') || name.endsWith('.pptx')) return 'mdi-file-powerpoint-box'
-    if (name.endsWith('.xls') || name.endsWith('.xlsx')) return 'mdi-file-excel-box'
-    if (name.endsWith('.txt')) return 'mdi-file-document-outline'
-    
-    return 'mdi-file'
-}
+  if (!file) return "mdi-file";
+  const type = file.type;
+  const name = file.name.toLowerCase();
+
+  if (type === "application/pdf" || name.endsWith(".pdf"))
+    return "mdi-file-pdf-box";
+  if (
+    ["image/png", "image/jpeg", "image/jpg"].includes(type) ||
+    name.match(/\.(png|jpg|jpeg|jfif)$/)
+  )
+    return "mdi-file-image";
+  if (name.endsWith(".doc") || name.endsWith(".docx") || name.endsWith(".rtf"))
+    return "mdi-file-word-box";
+  if (name.endsWith(".ppt") || name.endsWith(".pptx"))
+    return "mdi-file-powerpoint-box";
+  if (name.endsWith(".xls") || name.endsWith(".xlsx"))
+    return "mdi-file-excel-box";
+  if (name.endsWith(".txt")) return "mdi-file-document-outline";
+
+  return "mdi-file";
+};
 
 const triggerFileInput = () => {
-  fileInput.value.click()
-}
+  fileInput.value.click();
+};
 
 const handleFileUpload = (event) => {
-  const files = Array.from(event.target.files)
+  const files = Array.from(event.target.files);
   if (files.length > 0) {
-    processFiles(files)
+    processFiles(files);
   }
-  event.target.value = ''
-}
+  event.target.value = "";
+};
 
 const handleDrop = (event) => {
-  const files = Array.from(event.dataTransfer.files)
+  const files = Array.from(event.dataTransfer.files);
   if (files.length > 0) {
-    processFiles(files)
+    processFiles(files);
   }
-}
+};
 
 const processFiles = (files) => {
-    // Separate files
-    const pdfFiles = files.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
-    const imageFiles = files.filter(f => ['image/png', 'image/jpeg', 'image/jpg'].includes(f.type))
-    const otherFiles = files.filter(f => !pdfFiles.includes(f) && !imageFiles.includes(f))
-    
-    // Priority 1: PDF Files
-    if (pdfFiles.length > 0) {
-        if (pdfFiles.length > 1) {
-            // Multiple PDFs -> Merge
-            selectedFile.value = pdfFiles[0]
-            store.dispatch('setFile', pdfFiles[0])
-            filesToMerge.value = pdfFiles
-            canRemoveFirstFile.value = true
-            showMergeDialog.value = true
-        } else {
-            // Single PDF -> View/Edit
-            processFile(pdfFiles[0])
-        }
-        
-        // Notify if other files were ignored
-        if (imageFiles.length > 0 || otherFiles.length > 0) {
-            showSnackbar.value = true
-            snackbarText.value = `Opened PDF(s). Ignored ${imageFiles.length + otherFiles.length} other file(s).`
-            snackbarColor.value = 'info'
-        }
-        return
+  // Separate files
+  const pdfFiles = files.filter(
+    (f) =>
+      f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
+  );
+  const imageFiles = files.filter((f) =>
+    ["image/png", "image/jpeg", "image/jpg"].includes(f.type),
+  );
+  const otherFiles = files.filter(
+    (f) => !pdfFiles.includes(f) && !imageFiles.includes(f),
+  );
+
+  // Priority 1: PDF Files
+  if (pdfFiles.length > 0) {
+    if (pdfFiles.length > 1) {
+      // Multiple PDFs -> Merge
+      selectedFile.value = pdfFiles[0];
+      store.dispatch("setFile", pdfFiles[0]);
+      filesToMerge.value = pdfFiles;
+      canRemoveFirstFile.value = true;
+      showMergeDialog.value = true;
+    } else {
+      // Single PDF -> View/Edit
+      processFile(pdfFiles[0]);
     }
-    
-    // Priority 2: Image Files -> Allow selection, manual PNG to PDF
-    if (imageFiles.length > 0) {
-        // Store all images
-        selectedImages.value = imageFiles
-        selectedFile.value = imageFiles[0] // Set first as main to trigger UI "Selected File" state
-        store.dispatch('setFile', imageFiles[0])
-        
-        showSnackbar.value = true
-        snackbarText.value = `${imageFiles.length} images selected. Click 'PNG to PDF' to convert.`
-        snackbarColor.value = 'success'
-        return
+
+    // Notify if other files were ignored
+    if (imageFiles.length > 0 || otherFiles.length > 0) {
+      showSnackbar.value = true;
+      snackbarText.value = `Opened PDF(s). Ignored ${
+        imageFiles.length + otherFiles.length
+      } other file(s).`;
+      snackbarColor.value = "info";
     }
-    
-    // Priority 3: Other Files (Doc, PPT, etc.) -> Show not supported yet or specific message
-    if (otherFiles.length > 0) {
-        showSnackbar.value = true
-        snackbarText.value = 'Document conversion for this file type is coming soon!'
-        snackbarColor.value = 'warning'
-        return
-    }
-    
-    // Fallback
-    showSnackbar.value = true
-    snackbarText.value = 'Please select a supported file.'
-    snackbarColor.value = 'warning'
-}
+    return;
+  }
+
+  // Priority 2: Image Files -> Allow selection, manual PNG to PDF
+  if (imageFiles.length > 0) {
+    // Store all images
+    selectedImages.value = imageFiles;
+    selectedFile.value = imageFiles[0]; // Set first as main to trigger UI "Selected File" state
+    store.dispatch("setFile", imageFiles[0]);
+
+    showSnackbar.value = true;
+    snackbarText.value = `${imageFiles.length} images selected. Click 'PNG to PDF' to convert.`;
+    snackbarColor.value = "success";
+    return;
+  }
+
+  // Priority 3: Other Files (Doc, PPT, etc.) -> Show not supported yet or specific message
+  if (otherFiles.length > 0) {
+    showSnackbar.value = true;
+    snackbarText.value =
+      "Document conversion for this file type is coming soon!";
+    snackbarColor.value = "warning";
+    return;
+  }
+
+  // Fallback
+  showSnackbar.value = true;
+  snackbarText.value = "Please select a supported file.";
+  snackbarColor.value = "warning";
+};
 
 const processFile = (file) => {
   // Allow non-PDFs to be "selected" but maybe with limited actions?
   // For now, if it's a PDF, we proceed as normal.
-  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-      selectedFile.value = file
-      store.dispatch('setFile', file)
+  if (
+    file.type === "application/pdf" ||
+    file.name.toLowerCase().endsWith(".pdf")
+  ) {
+    selectedFile.value = file;
+    store.dispatch("setFile", file);
   } else {
-      // It's a non-PDF (e.g. Doc) that got here. 
-      // We can set it as selectedFile to show it, but disable Edit/Merge tools?
-      selectedFile.value = file
-      store.dispatch('setFile', file)
-      // Maybe show a warning that only "Convert to PDF" is available?
-      // Currently we don't have "Word to PDF" logic implemented.
+    // It's a non-PDF (e.g. Doc) that got here.
+    // We can set it as selectedFile to show it, but disable Edit/Merge tools?
+    selectedFile.value = file;
+    store.dispatch("setFile", file);
+    // Maybe show a warning that only "Convert to PDF" is available?
+    // Currently we don't have "Word to PDF" logic implemented.
   }
-}
+};
 
 const handleOptionClick = (action) => {
-    // Check if file is required for this action
-    if (action === 'png-to-pdf' || action === 'jpg-to-pdf') {
-        // If images are already selected, use them
-        if (selectedImages.value.length > 0) {
-            handlePngConversion(selectedImages.value)
+  // Check if file is required for this action
+  if (action === "png-to-pdf" || action === "jpg-to-pdf") {
+    // If images are already selected, use them
+    if (selectedImages.value.length > 0) {
+      handlePngConversion(selectedImages.value);
+    } else {
+      // Otherwise trigger upload
+      triggerPngInput();
+    }
+    return;
+  }
+
+  // If file exists, perform action (redirect to options or editor)
+  if (selectedFile.value) {
+    if (action === "edit") {
+      router.push("/editor");
+    } else if (action === "merge") {
+      openMergeDialog();
+    } else if (action === "pdf-to-png") {
+      convertPdfToImage("png");
+    } else if (action === "pdf-to-jpg") {
+      convertPdfToImage("jpeg");
+    } else if (action === "protect") {
+      showProtectDialog.value = true;
+    } else if (action === "watermark") {
+      router.push({ path: "/editor", query: { tool: "watermark" } });
+    } else if (action === "convert") {
+      convertPdfToWord();
+    } else {
+      router.push("/options"); // For now, other actions are in OptionsView
+    }
+  } else {
+    // No file, show warning
+    showSnackbar.value = true;
+    snackbarText.value = "Please upload a PDF document first.";
+    snackbarColor.value = "warning";
+  }
+};
+
+const convertPdfToWord = async () => {
+  if (!selectedFile.value) return;
+  isConverting.value = true;
+  conversionProgress.value = 0;
+
+  try {
+    const fileData = await selectedFile.value.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: fileData }).promise;
+    const numPages = pdf.numPages;
+
+    const docChildren = [];
+
+    for (let pageIndex = 1; pageIndex <= numPages; pageIndex++) {
+      const page = await pdf.getPage(pageIndex);
+      const viewport = page.getViewport({ scale: 1 });
+      // const pageHeight = viewport.height
+
+      const textContent = await page.getTextContent();
+      const items = textContent.items;
+
+      if (items.length === 0) {
+        // Empty page - add a blank paragraph
+        docChildren.push(new Paragraph({ text: "" }));
+        if (pageIndex < numPages)
+          docChildren.push(new Paragraph({ children: [new PageBreak()] }));
+        conversionProgress.value = Math.round((pageIndex / numPages) * 100);
+        continue;
+      }
+
+      // Collect font sizes to determine baseline body size
+      const fontSizes = items
+        .map((item) => Math.abs(item.transform[3]))
+        .filter((s) => s > 0);
+      fontSizes.sort((a, b) => a - b);
+      const medianIdx = Math.floor(fontSizes.length / 2);
+      const bodyFontSize = fontSizes[medianIdx] || 12;
+
+      // Group items into lines by Y position (within 2pt tolerance)
+      const lines = [];
+      for (const item of items) {
+        if (!item.str || item.str.trim() === "") continue;
+        const y = Math.round(item.transform[5]);
+        const existingLine = lines.find((l) => Math.abs(l.y - y) <= 3);
+        if (existingLine) {
+          existingLine.items.push(item);
         } else {
-            // Otherwise trigger upload
-            triggerPngInput()
+          lines.push({ y, items: [item] });
         }
-        return
+      }
+
+      // Sort lines top-to-bottom (PDF Y is bottom-up)
+      lines.sort((a, b) => b.y - a.y);
+
+      for (const line of lines) {
+        // Sort items left-to-right within a line
+        line.items.sort((a, b) => a.transform[4] - b.transform[4]);
+
+        const runs = line.items.map((item) => {
+          const fontSize = Math.abs(item.transform[3]) || bodyFontSize;
+          const fontName = (item.fontName || "").toLowerCase();
+          const isBold =
+            fontName.includes("bold") ||
+            fontName.includes("heavy") ||
+            fontName.includes("black");
+          const isItalic =
+            fontName.includes("italic") || fontName.includes("oblique");
+
+          // Append trailing space if needed
+          const text = item.str + (item.hasEOL ? "" : "");
+
+          return new TextRun({
+            text,
+            bold: isBold,
+            italics: isItalic,
+            size: Math.round(fontSize * 2), // docx uses half-points
+            font: "Calibri",
+          });
+        });
+
+        if (runs.length === 0) continue;
+
+        // Determine if this line is a heading based on font size ratio
+        const lineMaxSize = Math.max(
+          ...line.items.map((i) => Math.abs(i.transform[3])),
+        );
+        const sizeRatio = lineMaxSize / bodyFontSize;
+
+        let heading = undefined;
+        if (sizeRatio >= 2.0) heading = HeadingLevel.HEADING_1;
+        else if (sizeRatio >= 1.6) heading = HeadingLevel.HEADING_2;
+        else if (sizeRatio >= 1.3) heading = HeadingLevel.HEADING_3;
+
+        // Detect alignment: check X position relative to page width
+        const lineX = line.items[0].transform[4];
+        const pageWidth = viewport.width;
+        let alignment = AlignmentType.LEFT;
+        if (lineX > pageWidth * 0.4) alignment = AlignmentType.CENTER;
+        else if (lineX > pageWidth * 0.6) alignment = AlignmentType.RIGHT;
+
+        docChildren.push(
+          new Paragraph({
+            children: runs,
+            heading,
+            alignment,
+            spacing: { after: 80 },
+          }),
+        );
+      }
+
+      // Page break between pages (except last)
+      if (pageIndex < numPages) {
+        docChildren.push(new Paragraph({ children: [new PageBreak()] }));
+      }
+
+      conversionProgress.value = Math.round((pageIndex / numPages) * 100);
     }
 
-    // If file exists, perform action (redirect to options or editor)
-    if (selectedFile.value) {
-        if (action === 'edit') {
-            router.push('/editor')
-        } else if (action === 'merge') {
-            openMergeDialog()
-        } else if (action === 'pdf-to-png') {
-            convertPdfToImage('png')
-        } else if (action === 'pdf-to-jpg') {
-            convertPdfToImage('jpeg')
-        } else if (action === 'protect') {
-            showProtectDialog.value = true
-        } else if (action === 'watermark') {
-            router.push({ path: '/editor', query: { tool: 'watermark' } })
-        } else {
-            router.push('/options') // For now, other actions are in OptionsView
-        }
-    } else {
-        // No file, show warning
-        showSnackbar.value = true
-        snackbarText.value = 'Please upload a PDF document first.'
-        snackbarColor.value = 'warning'
-    }
-}
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: docChildren,
+        },
+      ],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    const baseName = selectedFile.value.name.replace(/\.pdf$/i, "");
+    link.download = `${baseName}.docx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+
+    showSnackbar.value = true;
+    snackbarText.value = "PDF converted to Word successfully!";
+    snackbarColor.value = "success";
+  } catch (error) {
+    console.error("PDF to Word error:", error);
+    showSnackbar.value = true;
+    snackbarText.value = "Failed to convert PDF to Word.";
+    snackbarColor.value = "error";
+  } finally {
+    isConverting.value = false;
+    conversionProgress.value = 0;
+  }
+};
 
 const convertPdfToImage = async (format) => {
-    // format must be 'png' or 'jpeg'
-    if (!selectedFile.value) return
-    isConverting.value = true
-    conversionProgress.value = 0
-    
-    try {
-        const fileData = await selectedFile.value.arrayBuffer()
-        const pdf = await pdfjsLib.getDocument(fileData).promise
-        const numPages = pdf.numPages
-        
-        for (let i = 1; i <= numPages; i++) {
-            const page = await pdf.getPage(i)
-            const viewport = page.getViewport({ scale: 2.0 }) // High resolution
-            const canvas = document.createElement('canvas')
-            const context = canvas.getContext('2d')
-            canvas.height = viewport.height
-            canvas.width = viewport.width
-            
-            // Draw white background for JPEG (since it doesn't support transparency)
-            if (format === 'jpeg') {
-                context.fillStyle = '#FFFFFF'
-                context.fillRect(0, 0, canvas.width, canvas.height)
-            }
-            
-            await page.render({ canvasContext: context, viewport: viewport }).promise
-            
-            conversionProgress.value = Math.round((i / numPages) * 100)
-            
-            // Download
-            const link = document.createElement('a')
-            const mimeType = format === 'png' ? 'image/png' : 'image/jpeg'
-            const ext = format === 'png' ? 'png' : 'jpg'
-            
-            link.href = canvas.toDataURL(mimeType, 0.9) // 0.9 quality for jpeg
-            link.download = `${selectedFile.value.name.replace('.pdf', '')}_page_${i}.${ext}`
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-        }
-        
-        showSnackbar.value = true
-        snackbarText.value = `PDF converted to ${format.toUpperCase()} successfully!`
-        snackbarColor.value = 'success'
-        
-    } catch (error) {
-        console.error(`PDF to ${format.toUpperCase()} error:`, error)
-        showSnackbar.value = true
-        snackbarText.value = `Failed to convert PDF to ${format.toUpperCase()}.`
-        snackbarColor.value = 'error'
-    } finally {
-        isConverting.value = false
-        conversionProgress.value = 0
+  // format must be 'png' or 'jpeg'
+  if (!selectedFile.value) return;
+  isConverting.value = true;
+  conversionProgress.value = 0;
+
+  try {
+    const fileData = await selectedFile.value.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument(fileData).promise;
+    const numPages = pdf.numPages;
+
+    for (let i = 1; i <= numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2.0 }); // High resolution
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      // Draw white background for JPEG (since it doesn't support transparency)
+      if (format === "jpeg") {
+        context.fillStyle = "#FFFFFF";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+      conversionProgress.value = Math.round((i / numPages) * 100);
+
+      // Download
+      const link = document.createElement("a");
+      const mimeType = format === "png" ? "image/png" : "image/jpeg";
+      const ext = format === "png" ? "png" : "jpg";
+
+      link.href = canvas.toDataURL(mimeType, 0.9); // 0.9 quality for jpeg
+      link.download = `${selectedFile.value.name.replace(
+        ".pdf",
+        "",
+      )}_page_${i}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
-}
+
+    showSnackbar.value = true;
+    snackbarText.value = `PDF converted to ${format.toUpperCase()} successfully!`;
+    snackbarColor.value = "success";
+  } catch (error) {
+    console.error(`PDF to ${format.toUpperCase()} error:`, error);
+    showSnackbar.value = true;
+    snackbarText.value = `Failed to convert PDF to ${format.toUpperCase()}.`;
+    snackbarColor.value = "error";
+  } finally {
+    isConverting.value = false;
+    conversionProgress.value = 0;
+  }
+};
 
 // PNG to PDF
-const pngInput = ref(null)
+const pngInput = ref(null);
 
 const triggerPngInput = () => {
-    pngInput.value.click()
-}
+  pngInput.value.click();
+};
 
 const handlePngUpload = (event) => {
-    const files = Array.from(event.target.files)
-    if (files.length === 0) return
-    
-    // Instead of auto-converting, just select them and let user click 'PNG to PDF'
-    selectedImages.value = files
-    selectedFile.value = files[0] // Display purpose
-    store.dispatch('setFile', files[0])
-    
-    showSnackbar.value = true
-    snackbarText.value = `${files.length} images selected. Click 'PNG to PDF' to convert.`
-    snackbarColor.value = 'success'
-    
-    event.target.value = ''
-}
+  const files = Array.from(event.target.files);
+  if (files.length === 0) return;
+
+  // Instead of auto-converting, just select them and let user click 'PNG to PDF'
+  selectedImages.value = files;
+  selectedFile.value = files[0]; // Display purpose
+  store.dispatch("setFile", files[0]);
+
+  showSnackbar.value = true;
+  snackbarText.value = `${files.length} images selected. Click 'PNG to PDF' to convert.`;
+  snackbarColor.value = "success";
+
+  event.target.value = "";
+};
 
 const handlePngConversion = async (files) => {
-    isConverting.value = true
-    
-    try {
-        const pdfDoc = await PDFDocument.create()
-        
-        for (const file of files) {
-            const imageBytes = await file.arrayBuffer()
-            let image
-            if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
-                image = await pdfDoc.embedJpg(imageBytes)
-            } else if (file.type === 'image/png') {
-                image = await pdfDoc.embedPng(imageBytes)
-            } else {
-                continue // Skip unsupported
-            }
-            
-            if (image) {
-                const page = pdfDoc.addPage([image.width, image.height])
-                page.drawImage(image, {
-                    x: 0,
-                    y: 0,
-                    width: image.width,
-                    height: image.height,
-                })
-            }
-        }
-        
-        const pdfBytes = await pdfDoc.save()
-        
-        // Download
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' })
-        const link = document.createElement('a')
-        link.href = URL.createObjectURL(blob)
-        link.download = `converted_images_${Date.now()}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        
-        showSnackbar.value = true
-        snackbarText.value = 'Images converted to PDF successfully!'
-        snackbarColor.value = 'success'
-        
-    } catch (error) {
-        console.error('PNG to PDF error:', error)
-        showSnackbar.value = true
-        snackbarText.value = 'Failed to convert images to PDF.'
-        snackbarColor.value = 'error'
-    } finally {
-        isConverting.value = false
+  isConverting.value = true;
+
+  try {
+    const pdfDoc = await PDFDocument.create();
+
+    for (const file of files) {
+      const imageBytes = await file.arrayBuffer();
+      let image;
+      if (file.type === "image/jpeg" || file.type === "image/jpg") {
+        image = await pdfDoc.embedJpg(imageBytes);
+      } else if (file.type === "image/png") {
+        image = await pdfDoc.embedPng(imageBytes);
+      } else {
+        continue; // Skip unsupported
+      }
+
+      if (image) {
+        const page = pdfDoc.addPage([image.width, image.height]);
+        page.drawImage(image, {
+          x: 0,
+          y: 0,
+          width: image.width,
+          height: image.height,
+        });
+      }
     }
-}
+
+    const pdfBytes = await pdfDoc.save();
+
+    // Download
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `converted_images_${Date.now()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showSnackbar.value = true;
+    snackbarText.value = "Images converted to PDF successfully!";
+    snackbarColor.value = "success";
+  } catch (error) {
+    console.error("PNG to PDF error:", error);
+    showSnackbar.value = true;
+    snackbarText.value = "Failed to convert images to PDF.";
+    snackbarColor.value = "error";
+  } finally {
+    isConverting.value = false;
+  }
+};
 
 // Merge Functions
 const openMergeDialog = () => {
-    if (!selectedFile.value) return
-    filesToMerge.value = [selectedFile.value]
-    canRemoveFirstFile.value = false // Keep the main file
-    showMergeDialog.value = true
-}
+  if (!selectedFile.value) return;
+  filesToMerge.value = [selectedFile.value];
+  canRemoveFirstFile.value = false; // Keep the main file
+  showMergeDialog.value = true;
+};
 
 const closeMergeDialog = () => {
-    showMergeDialog.value = false
-    filesToMerge.value = []
-}
+  showMergeDialog.value = false;
+  filesToMerge.value = [];
+};
 
 const triggerMergeInput = () => {
-    mergeInput.value.click()
-}
+  mergeInput.value.click();
+};
 
 const handleMergeFileUpload = (event) => {
-    const files = Array.from(event.target.files)
-    const pdfFiles = files.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
-    
-    if (pdfFiles.length < files.length) {
-        showSnackbar.value = true
-        snackbarText.value = 'Some files were skipped. Only PDFs allowed.'
-        snackbarColor.value = 'warning'
-    }
-    
-    filesToMerge.value = [...filesToMerge.value, ...pdfFiles]
-    event.target.value = ''
-}
+  const files = Array.from(event.target.files);
+  const pdfFiles = files.filter(
+    (f) =>
+      f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
+  );
+
+  if (pdfFiles.length < files.length) {
+    showSnackbar.value = true;
+    snackbarText.value = "Some files were skipped. Only PDFs allowed.";
+    snackbarColor.value = "warning";
+  }
+
+  filesToMerge.value = [...filesToMerge.value, ...pdfFiles];
+  event.target.value = "";
+};
 
 const removeMergeFile = (index) => {
-    filesToMerge.value.splice(index, 1)
-}
+  filesToMerge.value.splice(index, 1);
+};
 
 const mergePdfs = async () => {
-    if (filesToMerge.value.length < 2) return
-    isMerging.value = true
-    
-    try {
-        const mergedPdf = await PDFDocument.create()
-        
-        for (const file of filesToMerge.value) {
-            const arrayBuffer = await file.arrayBuffer()
-            const pdf = await PDFDocument.load(arrayBuffer)
-            const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-            copiedPages.forEach((page) => mergedPdf.addPage(page))
-        }
-        
-        const mergedPdfBytes = await mergedPdf.save()
-        
-        // Download
-        const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
-        const link = document.createElement('a')
-        link.href = URL.createObjectURL(blob)
-        link.download = `merged_document_${Date.now()}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        
-        showSnackbar.value = true
-        snackbarText.value = 'PDFs merged successfully!'
-        snackbarColor.value = 'success'
-        showMergeDialog.value = false
-        filesToMerge.value = []
-        
-    } catch (error) {
-        console.error('Merge error:', error)
-        showSnackbar.value = true
-        snackbarText.value = 'Failed to merge PDFs.'
-        snackbarColor.value = 'error'
-    } finally {
-        isMerging.value = false
-    }
-}
-
-const protectPdf = async () => {
-  if (!password.value || !selectedFile.value) return
-  isProtecting.value = true
+  if (filesToMerge.value.length < 2) return;
+  isMerging.value = true;
 
   try {
-    const arrayBuffer = await selectedFile.value.arrayBuffer()
-    const pdfDoc = await PDFDocument.load(arrayBuffer)
-    
+    const mergedPdf = await PDFDocument.create();
+
+    for (const file of filesToMerge.value) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await PDFDocument.load(arrayBuffer);
+      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      copiedPages.forEach((page) => mergedPdf.addPage(page));
+    }
+
+    const mergedPdfBytes = await mergedPdf.save();
+
+    // Download
+    const blob = new Blob([mergedPdfBytes], { type: "application/pdf" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `merged_document_${Date.now()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showSnackbar.value = true;
+    snackbarText.value = "PDFs merged successfully!";
+    snackbarColor.value = "success";
+    showMergeDialog.value = false;
+    filesToMerge.value = [];
+  } catch (error) {
+    console.error("Merge error:", error);
+    showSnackbar.value = true;
+    snackbarText.value = "Failed to merge PDFs.";
+    snackbarColor.value = "error";
+  } finally {
+    isMerging.value = false;
+  }
+};
+
+const protectPdf = async () => {
+  if (!password.value || !selectedFile.value) return;
+  isProtecting.value = true;
+
+  try {
+    const arrayBuffer = await selectedFile.value.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+
     // Encrypt via save options
     const pdfBytes = await pdfDoc.save({
       userPassword: password.value,
       ownerPassword: password.value,
       permissions: {
-        printing: 'highResolution',
+        printing: "highResolution",
         modifying: false,
         copying: false,
         annotating: false,
         fillingForms: false,
         contentAccessibility: false,
         documentAssembly: false,
-      }
-    })
-    
+      },
+    });
+
     // Download
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `protected_${selectedFile.value.name}`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `protected_${selectedFile.value.name}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    showSnackbar.value = true
-    snackbarText.value = 'PDF protected successfully!'
-    snackbarColor.value = 'success'
-    closeProtectDialog()
-
+    showSnackbar.value = true;
+    snackbarText.value = "PDF protected successfully!";
+    snackbarColor.value = "success";
+    closeProtectDialog();
   } catch (error) {
-    console.error('Protect PDF error:', error)
-    showSnackbar.value = true
-    snackbarText.value = 'Failed to protect PDF.'
-    snackbarColor.value = 'error'
+    console.error("Protect PDF error:", error);
+    showSnackbar.value = true;
+    snackbarText.value = "Failed to protect PDF.";
+    snackbarColor.value = "error";
   } finally {
-    isProtecting.value = false
+    isProtecting.value = false;
   }
-}
+};
 
 const closeProtectDialog = () => {
-  showProtectDialog.value = false
-  password.value = ''
-  showPassword.value = false
-}
+  showProtectDialog.value = false;
+  password.value = "";
+  showPassword.value = false;
+};
 
 const removeFile = () => {
-  selectedFile.value = null
-  selectedImages.value = [] // Clear selected images
-  isConverting.value = false
-  conversionProgress.value = 0
-  conversionComplete.value = false
-  convertedPages.value = []
-}
+  selectedFile.value = null;
+  selectedImages.value = []; // Clear selected images
+  isConverting.value = false;
+  conversionProgress.value = 0;
+  conversionComplete.value = false;
+  convertedPages.value = [];
+};
 
 const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
 </script>
 
 <style scoped>
@@ -1228,5 +1740,4 @@ const formatFileSize = (bytes) => {
   border-radius: 8px;
   cursor: pointer;
 }
-
 </style>

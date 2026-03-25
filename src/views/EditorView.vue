@@ -32,24 +32,35 @@
     <div v-else class="d-flex flex-column align-center w-100 h-100">
       <!-- Top Mode Switcher -->
       <div class="d-flex align-center px-4 bg-white border-b" style="height: 50px; width: 100%; z-index: 10;">
-          <v-btn variant="text" :color="!isFormMode ? 'primary' : 'grey-darken-1'" @click="isFormMode = false" class="text-capitalize font-weight-bold mr-2">Edit</v-btn>
-          <v-btn variant="text" :color="isFormMode ? 'primary' : 'grey-darken-1'" @click="isFormMode = true" class="text-capitalize font-weight-bold">Create Form</v-btn>
+          <v-btn variant="text" :color="!isFormMode && !isEditPdfMode ? 'primary' : 'grey-darken-1'" @click="isFormMode = false; isEditPdfMode = false; pendingFormElement = null; selectedFieldId = null" class="text-capitalize font-weight-bold mr-2">Edit</v-btn>
+          <v-btn variant="text" :color="isEditPdfMode ? 'primary' : 'grey-darken-1'" @click="isFormMode = false; isEditPdfMode = true; tool = 'text'; pendingFormElement = null; selectedFieldId = null" class="text-capitalize font-weight-bold mr-2">
+            <v-icon start size="small">mdi-pencil</v-icon>
+            Edit PDF
+          </v-btn>
+          <v-btn variant="text" :color="isFormMode ? 'primary' : 'grey-darken-1'" @click="isFormMode = true; isEditPdfMode = false; pendingFormElement = null" class="text-capitalize font-weight-bold">Create Form</v-btn>
       </div>
 
       <div class="d-flex w-100 flex-grow-1 overflow-hidden position-relative">
           <!-- Form Elements Sidebar -->
           <div v-if="isFormMode" class="bg-white border-r overflow-y-auto pa-4" style="width: 280px; min-width: 280px; height: 100%;">
               <div class="text-subtitle-2 font-weight-bold mb-4">Add form elements</div>
+              <div v-if="pendingFormElement" class="mb-3 pa-2 rounded bg-blue-lighten-5 d-flex align-center justify-space-between">
+                <span class="text-caption text-primary font-weight-medium">
+                  <v-icon size="x-small" class="mr-1">mdi-cursor-default-click</v-icon>
+                  Click on PDF to place "{{ pendingFormElement.label }}"
+                </span>
+                <v-btn size="x-small" variant="text" icon @click="pendingFormElement = null">
+                  <v-icon size="x-small">mdi-close</v-icon>
+                </v-btn>
+              </div>
               <v-row dense>
                   <v-col cols="6" v-for="(item, i) in formElements" :key="i">
                       <v-card
                           variant="outlined"
                           class="d-flex flex-column align-center justify-center py-4 px-2 mb-2 fill-height cursor-pointer form-element-card"
-                          color="orange-lighten-5"
-                          style="border-color: #ffe0b2 !important;"
-                          @mousedown="startDragFormElement($event, item)"
-                          @click="addFormElement(item)"
-                          draggable="true"
+                          :color="pendingFormElement && pendingFormElement.name === item.name ? 'blue-lighten-5' : 'orange-lighten-5'"
+                          :style="pendingFormElement && pendingFormElement.name === item.name ? 'border-color: #1976D2 !important;' : 'border-color: #ffe0b2 !important;'"
+                          @click="selectFormElement(item)"
                       >
                           <div class="d-flex justify-space-between w-100 align-center mb-1 px-1">
                               <span class="text-caption font-weight-medium text-grey-darken-3 text-truncate" style="font-size: 0.75rem !important;">{{ item.label }}</span>
@@ -61,6 +72,11 @@
           </div>
 
           <div class="d-flex flex-column flex-grow-1 h-100 w-100 overflow-hidden">
+              <!-- Edit PDF mode hint bar -->
+              <div v-if="isEditPdfMode" class="d-flex align-center px-4 py-1 bg-blue-lighten-5 flex-shrink-0" style="border-bottom: 1px solid #BBDEFB;">
+                <v-icon size="small" color="primary" class="mr-2">mdi-information-outline</v-icon>
+                <span class="text-caption text-primary">Click anywhere on the PDF to add text. Double-click existing text to edit it.</span>
+              </div>
               <!-- Toolbar (Always visible, but tools might change based on mode if needed, for now keep same) -->
               <v-toolbar density="compact" class="mb-4 px-2 border-b flex-shrink-0" elevation="0" color="#e7ecf1" height="80">
                 <v-btn icon @click="router.push('/')" title="Back to Home" class="mr-2">
@@ -259,13 +275,20 @@
                     Download
                   </v-btn>
                 </template>
+
+                <!-- Form mode download -->
+                <template v-if="isFormMode">
+                  <v-btn color="success" variant="flat" @click="downloadForm" prepend-icon="mdi-download" class="text-none" :loading="isSavingForm">
+                    Download Form
+                  </v-btn>
+                </template>
               </v-toolbar>
 
               <!-- Canvas Scroll Area -->
               <div class="d-flex justify-center flex-grow-1 overflow-auto bg-grey-lighten-4 py-8">
                   <!-- Canvas Container -->
                   <div class="canvas-wrapper bg-white border-black" ref="canvasWrapper"
-                       :class="{ 'cursor-crosshair': isPlacingTable }"
+                       :class="{ 'cursor-crosshair': isPlacingTable || !!pendingFormElement }"
                        @click="handleCanvasClick"
                        @mousedown="handleCanvasMouseDown"
                   >
@@ -452,7 +475,7 @@
         </div>
 
         <!-- Shapes Layer -->
-        <div class="shape-layer" :class="{ 'pointer-events-none': tool !== 'shape' }">
+        <div class="shape-layer" :class="{ 'pointer-events-none': !isFormMode && tool !== 'shape' }">
           <div v-for="shape in (shapes[pageNum] || [])" :key="shape.id"
                class="shape-element"
                :class="{ 'is-selected': selectedShapeId === shape.id }"
@@ -485,7 +508,7 @@
                  class="resize-handle"
                  @mousedown.stop="startResizeShape(shape, $event)"></div>
 
-            <v-icon v-if="tool === 'shape' && selectedShapeId === shape.id" 
+            <v-icon v-if="(isFormMode || tool === 'shape') && selectedShapeId === shape.id" 
                     icon="mdi-close-circle" 
                     color="error" 
                     size="x-small" 
@@ -606,10 +629,48 @@
              <v-icon icon="mdi-close-circle" color="error" class="delete-btn-drawing" @click.stop="deleteSelectedDrawing"></v-icon>
         </div>
 
+        <!-- Form Fields Layer -->
+        <div class="form-fields-layer" :class="{ 'pointer-events-none': !isFormMode }">
+          <div v-for="field in (formFields[pageNum] || [])" :key="field.id"
+               class="form-field-element"
+               :class="{ 'is-selected': selectedFieldId === field.id }"
+               :style="{ left: field.x + 'px', top: field.y + 'px', width: field.width + 'px' }"
+               @mousedown.stop="startDragField(field, $event)"
+               @click.stop="selectField(field)">
+
+            <!-- Field body: green input-style box showing db field name -->
+            <div v-if="field.type === 'signature'" class="form-field-box form-field-signature">
+              <v-icon size="x-small" color="teal-darken-1" class="mr-1">mdi-draw</v-icon>
+              <span class="form-field-db-name">{{ field.dbFieldName || field.label }}</span>
+            </div>
+            <div v-else-if="field.type === 'checkbox'" class="form-field-box form-field-checkbox-row">
+              <div class="form-field-checkbox-box"></div>
+              <span class="form-field-db-name">{{ field.dbFieldName || field.label }}</span>
+            </div>
+            <div v-else-if="field.type === 'radio'" class="form-field-box form-field-checkbox-row">
+              <div class="form-field-radio-box"></div>
+              <span class="form-field-db-name">{{ field.dbFieldName || field.label }}</span>
+            </div>
+            <div v-else class="form-field-box">
+              <span class="form-field-db-name">{{ field.dbFieldName || field.label }}</span>
+            </div>
+
+            <!-- Top controls bar (visible when selected) -->
+            <div v-if="selectedFieldId === field.id" class="form-field-top-controls" @mousedown.stop>
+              <v-icon icon="mdi-content-copy" size="x-small" color="grey-darken-1" class="ffc-btn" title="Duplicate" @click.stop="duplicateField(field)"></v-icon>
+              <v-icon icon="mdi-delete-outline" size="x-small" color="error" class="ffc-btn" title="Delete" @click.stop="deleteField(field)"></v-icon>
+            </div>
+
+            <!-- Resize handle -->
+            <div v-if="selectedFieldId === field.id" class="form-field-resize" @mousedown.stop="startResizeField(field, $event)"></div>
+          </div>
+        </div>
+
         <!-- Signatures Layer -->
         <div class="signature-layer">
           <div v-for="sig in (signatureObjects[pageNum] || [])" :key="sig.id"
                class="signature-element"
+               :class="{ 'is-selected': selectedSignatureId === sig.id }"
                :style="{ 
                  left: sig.x + 'px', 
                  top: sig.y + 'px', 
@@ -617,7 +678,10 @@
                  height: sig.height + 'px'
                }"
                @mousedown.stop="startDragSignature($event, sig)">
-               <img :src="sig.dataUrl" style="width: 100%; height: 100%; object-fit: contain;" />
+               <img v-if="sig.dataUrl" :src="sig.dataUrl" style="width: 100%; height: 100%; object-fit: contain;" />
+               <div v-else class="d-flex align-center justify-center" style="width:100%;height:100%;border:2px dashed #aaa;background:rgba(200,200,255,0.15);">
+                 <span style="color:#aaa;font-size:12px;">Signature</span>
+               </div>
                <div v-if="selectedSignatureId === sig.id" class="signature-controls">
                  <div class="resize-handle" @mousedown.stop="startResizeSignature($event, sig)"></div>
                  <v-icon icon="mdi-close-circle" color="error" class="delete-btn-signature" @click.stop="deleteSignatureObject(sig)"></v-icon>
@@ -626,18 +690,18 @@
         </div>
 
         <!-- Text Layer -->
-        <div class="text-layer" :class="{ 'pointer-events-none': tool !== 'text' }">
+        <div class="text-layer" :class="{ 'pointer-events-none': !isFormMode && !isEditPdfMode && tool !== 'text' }">
           <div v-for="text in (texts[pageNum] || [])" :key="text.id"
                class="text-element"
                :class="{ 
-                 'pointer-events-auto': tool === 'text',
+                 'pointer-events-auto': isFormMode || isEditPdfMode || tool === 'text',
                  'is-editing': editingTextId === text.id 
                }"
                :style="{ left: text.x + 'px', top: text.y + 'px' }"
                @mousedown.stop="startDragText(text, $event)">
             
             <!-- Controls (Visible on hover or when editing) -->
-            <div class="text-controls" v-if="tool === 'text'">
+            <div class="text-controls" v-if="isFormMode || isEditPdfMode || tool === 'text'">
                <!-- Formatting Tools -->
                <template v-if="editingTextId === text.id">
                    <v-btn size="x-small" variant="text" icon @click.stop="toggleBold(text)" :color="text.isBold ? 'primary' : 'grey-darken-1'">
@@ -725,6 +789,142 @@
       </div>
     </div>
     </div>
+
+    <!-- Field Properties Panel (right side, shown when a form field is selected in form mode) -->
+    <div v-if="isFormMode && selectedField" class="field-props-panel" @mousedown.stop>
+      <div class="field-props-header">
+        <span class="text-subtitle-2 font-weight-bold">Field Properties</span>
+        <v-btn icon size="x-small" variant="text" @click="selectedFieldId = null">
+          <v-icon size="small">mdi-close</v-icon>
+        </v-btn>
+      </div>
+
+      <div class="field-props-body">
+        <!-- Database field name -->
+        <div class="field-props-section">
+          <div class="field-props-label">
+            Database field name
+            <v-tooltip text="This key maps to the database column. The value from the database will be displayed in this field." location="top">
+              <template v-slot:activator="{ props }">
+                <v-icon v-bind="props" size="x-small" color="grey" class="ml-1">mdi-information-outline</v-icon>
+              </template>
+            </v-tooltip>
+          </div>
+          <v-text-field
+            v-model="selectedField.dbFieldName"
+            density="compact"
+            variant="outlined"
+            hide-details
+            placeholder="e.g. first_name"
+            class="field-props-input"
+            @update:model-value="pushToHistory"
+          ></v-text-field>
+        </div>
+
+        <!-- Helper text -->
+        <div class="field-props-section">
+          <div class="field-props-label">
+            Add some text to help
+            <v-tooltip text="Placeholder text shown inside the field to guide the user." location="top">
+              <template v-slot:activator="{ props }">
+                <v-icon v-bind="props" size="x-small" color="grey" class="ml-1">mdi-information-outline</v-icon>
+              </template>
+            </v-tooltip>
+          </div>
+          <v-text-field
+            v-model="selectedField.helperText"
+            density="compact"
+            variant="outlined"
+            hide-details
+            placeholder="Enter text"
+            class="field-props-input"
+          ></v-text-field>
+        </div>
+
+        <!-- Toggles -->
+        <div class="field-props-section">
+          <div class="field-props-toggle">
+            <span class="field-props-toggle-label">Required field <span class="text-error">*</span></span>
+            <v-switch v-model="selectedField.required" density="compact" hide-details color="primary" @update:model-value="pushToHistory"></v-switch>
+          </div>
+          <div class="field-props-toggle">
+            <span class="field-props-toggle-label">Read-only field</span>
+            <v-switch v-model="selectedField.readOnly" density="compact" hide-details color="primary" @update:model-value="pushToHistory"></v-switch>
+          </div>
+          <div class="field-props-toggle">
+            <span class="field-props-toggle-label">Make this field conditional</span>
+            <v-switch v-model="selectedField.conditional" density="compact" hide-details color="primary" @update:model-value="pushToHistory"></v-switch>
+          </div>
+        </div>
+
+        <!-- Conditional config -->
+        <div v-if="selectedField.conditional" class="field-props-section">
+          <div class="field-props-label">Show this field when</div>
+          <v-text-field
+            v-model="selectedField.conditionField"
+            density="compact"
+            variant="outlined"
+            hide-details
+            placeholder="DB field name"
+            class="field-props-input mb-2"
+          ></v-text-field>
+          <v-select
+            v-model="selectedField.conditionOp"
+            :items="['equals', 'not equals', 'contains', 'is not empty']"
+            density="compact"
+            variant="outlined"
+            hide-details
+            class="field-props-input mb-2"
+          ></v-select>
+          <v-text-field
+            v-model="selectedField.conditionValue"
+            density="compact"
+            variant="outlined"
+            hide-details
+            placeholder="Value"
+            class="field-props-input"
+          ></v-text-field>
+        </div>
+
+        <!-- Change field type -->
+        <div class="field-props-section">
+          <v-btn block variant="outlined" color="grey-darken-2" size="small" class="text-capitalize" @click="showChangeTypeMenu = !showChangeTypeMenu">
+            Change field type
+          </v-btn>
+          <div v-if="showChangeTypeMenu" class="field-type-menu mt-2">
+            <div v-for="ft in fieldTypes" :key="ft.name"
+                 class="field-type-option"
+                 :class="{ 'active': selectedField.type === ft.name }"
+                 @click="changeFieldType(selectedField, ft.name)">
+              <v-icon size="small" class="mr-2">{{ ft.icon }}</v-icon>
+              {{ ft.label }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced section -->
+        <div class="field-props-section">
+          <div class="field-props-advanced" @click="showAdvanced = !showAdvanced">
+            <span class="text-caption font-weight-bold text-grey-darken-2">ADVANCED</span>
+            <v-icon size="small" color="grey-darken-2">{{ showAdvanced ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+          </div>
+          <div v-if="showAdvanced" class="mt-2">
+            <div class="field-props-label mb-1">Field width (px)</div>
+            <v-text-field
+              v-model.number="selectedField.width"
+              density="compact"
+              variant="outlined"
+              hide-details
+              type="number"
+              min="60"
+              class="field-props-input"
+              @update:model-value="pushToHistory"
+            ></v-text-field>
+          </div>
+        </div>
+      </div>
+    </div>
+
     </div>
   </div>
 </div>
@@ -830,9 +1030,10 @@ const resizingTableId = ref(null)
 const initialTableState = ref(null)
 
 const isPlacingTable = ref(false)
-const draggedFormElement = ref(null)
+const pendingFormElement = ref(null)
 
 const isFormMode = ref(false)
+const isEditPdfMode = ref(false)
 
 const formElements = [
     { label: 'Signature', icon: 'mdi-draw', name: 'signature' },
@@ -860,121 +1061,165 @@ const formElements = [
     { label: 'US states', icon: 'mdi-flag', name: 'states' },
 ]
 
-const startDragFormElement = (e, item) => {
-    draggedFormElement.value = item
-    // Prevent default drag ghost if we want custom behavior, or let it be
-    // e.preventDefault() // If we prevent default, we need to handle drag manually via mousemove
-    // For now let's use simple logic: set state, then on mouseup on canvas check state
-    
-    window.addEventListener('mouseup', handleFormElementDrop)
+const fieldTypes = [
+    { label: 'Text', name: 'text', icon: 'mdi-format-text' },
+    { label: 'Signature', name: 'signature', icon: 'mdi-draw' },
+    { label: 'Date', name: 'date', icon: 'mdi-calendar' },
+    { label: 'Initials', name: 'initials', icon: 'mdi-signature-text' },
+    { label: 'Name', name: 'name', icon: 'mdi-account-box-outline' },
+    { label: 'Email', name: 'email', icon: 'mdi-email-outline' },
+    { label: 'Checkbox', name: 'checkbox', icon: 'mdi-checkbox-marked-outline' },
+    { label: 'Radio button', name: 'radio', icon: 'mdi-radiobox-marked' },
+    { label: 'Number', name: 'number', icon: 'mdi-pound' },
+    { label: 'Dropdown', name: 'dropdown', icon: 'mdi-form-dropdown' },
+]
+
+const selectedField = computed(() => {
+    if (!selectedFieldId.value) return null
+    const list = formFields.value[pageNum.value] || []
+    return list.find(f => f.id === selectedFieldId.value) || null
+})
+
+const changeFieldType = (field, newType) => {
+    field.type = newType
+    const ft = fieldTypes.find(f => f.name === newType)
+    if (ft && !field.dbFieldName) field.dbFieldName = ft.label + '_1'
+    showChangeTypeMenu.value = false
+    pushToHistory()
 }
 
-const handleFormElementDrop = (e) => {
-    window.removeEventListener('mouseup', handleFormElementDrop)
-    if (!draggedFormElement.value) return
-    
-    // Check if drop is within canvas
-    const rect = canvasWrapper.value.getBoundingClientRect()
-    if (
-        e.clientX >= rect.left &&
-        e.clientX <= rect.right &&
-        e.clientY >= rect.top &&
-        e.clientY <= rect.bottom
-    ) {
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
-        addFormElementAt(draggedFormElement.value, x, y)
+const duplicateField = (field) => {
+    const copy = { ...field, id: Date.now(), x: field.x + 10, y: field.y + 10 }
+    if (!formFields.value[pageNum.value]) formFields.value[pageNum.value] = []
+    formFields.value[pageNum.value].push(copy)
+    selectedFieldId.value = copy.id
+    pushToHistory()
+}
+
+const downloadForm = async () => {
+    if (!file.value) return
+    isSavingForm.value = true
+    try {
+        const arrayBuffer = await file.value.arrayBuffer()
+        const pdfDoc = await PDFDocument.load(arrayBuffer)
+        const pages = pdfDoc.getPages()
+        const form = pdfDoc.getForm()
+        const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica)
+
+        for (let i = 0; i < pages.length; i++) {
+            const pNum = i + 1
+            const page = pages[i]
+            const { height } = page.getSize()
+            const fields = formFields.value[pNum] || []
+
+            for (const field of fields) {
+                const fieldName = field.dbFieldName || field.label || `field_${field.id}`
+                // Convert canvas coords to PDF coords (Y flipped, scaled)
+                const x = field.x / scale.value
+                const w = field.width / scale.value
+                const fieldH = (field.type === 'signature' ? 44 : 28) / scale.value
+                const y = height - (field.y / scale.value) - fieldH
+
+                if (field.type === 'checkbox') {
+                    const cb = form.createCheckBox(fieldName)
+                    cb.addToPage(page, { x, y, width: 14 / scale.value, height: 14 / scale.value, borderWidth: 1 })
+                    if (field.required) cb.enableRequired()
+                    if (field.readOnly) cb.enableReadOnly()
+
+                } else if (field.type === 'radio') {
+                    // Radio groups need a group name — use dbFieldName as group
+                    try {
+                        const rg = form.getRadioGroup(fieldName)
+                        rg.addOptionToPage(fieldName + '_opt', page, { x, y, width: 14 / scale.value, height: 14 / scale.value })
+                    } catch {
+                        const rg = form.createRadioGroup(fieldName)
+                        rg.addOptionToPage(fieldName + '_opt', page, { x, y, width: 14 / scale.value, height: 14 / scale.value })
+                    }
+
+                } else if (field.type === 'signature') {
+                    // Signature = a button field styled as a signature box
+                    const btn = form.createButton(fieldName)
+                    btn.addToPage(field.helperText || 'Sign here', page, {
+                        x, y, width: w, height: fieldH,
+                        font: helvetica,
+                        fontSize: 10,
+                        borderWidth: 1,
+                        borderColor: rgb(0.18, 0.49, 0.20),
+                        backgroundColor: rgb(0.91, 0.96, 0.91),
+                    })
+
+                } else if (field.type === 'dropdown') {
+                    const dd = form.createDropdown(fieldName)
+                    dd.addOptions(['Option 1', 'Option 2', 'Option 3'])
+                    dd.addToPage(page, { x, y, width: w, height: fieldH, font: helvetica, fontSize: 10, borderWidth: 1 })
+                    if (field.required) dd.enableRequired()
+                    if (field.readOnly) dd.enableReadOnly()
+
+                } else {
+                    // All text-based fields (text, name, email, date, number, etc.)
+                    const tf = form.createTextField(fieldName)
+                    tf.setText(field.helperText || '')
+                    tf.addToPage(page, {
+                        x, y, width: w, height: fieldH,
+                        font: helvetica,
+                        fontSize: 10,
+                        borderWidth: 1,
+                        borderColor: rgb(0.18, 0.49, 0.20),
+                        backgroundColor: rgb(0.91, 0.96, 0.91),
+                    })
+                    if (field.required) tf.enableRequired()
+                    if (field.readOnly) tf.enableReadOnly()
+                }
+            }
+        }
+
+        const pdfBytes = await pdfDoc.save()
+        const baseName = file.value.name.replace(/\.pdf$/i, '')
+        downloadBlob(pdfBytes, `${baseName}_form.pdf`, 'application/pdf')
+
+    } catch (err) {
+        console.error('Form download error:', err)
+        alert('Failed to export form PDF.')
+    } finally {
+        isSavingForm.value = false
     }
-    
-    draggedFormElement.value = null
+}
+
+const selectFormElement = (item) => {
+    if (pendingFormElement.value && pendingFormElement.value.name === item.name) {
+        pendingFormElement.value = null
+    } else {
+        pendingFormElement.value = item
+    }
 }
 
 const addFormElementAt = (item, x, y) => {
-    if (item.name === 'signature') {
-        // Add signature field placeholder
-        const width = 150
-        const height = 60
-        const newSig = {
-            id: Date.now(),
-            x: x - width/2,
-            y: y - height/2,
-            width: width,
-            height: height,
-            dataUrl: '', // Empty initially
-            isPlaceholder: true // Mark as form field
-        }
-        if (!signatureObjects.value[pageNum.value]) signatureObjects.value[pageNum.value] = []
-        signatureObjects.value[pageNum.value].push(newSig)
-        pushToHistory()
-    } else if (item.name === 'text' || item.name === 'name' || item.name === 'email' || item.name === 'date' || item.name === 'initials') {
-        // Add text field
-        const newText = {
-            id: Date.now(),
-            x: x,
-            y: y,
-            text: item.label, // Default text
-            fontSize: 16,
-            color: '#000000',
-            fontFamily: 'Helvetica',
-            isBold: false,
-            isItalic: false,
-            isFormField: true // Mark as form field
-        }
-        if (!texts.value[pageNum.value]) texts.value[pageNum.value] = []
-        texts.value[pageNum.value].push(newText)
-        editingTextId.value = newText.id
-    } else if (item.name === 'checkbox') {
-        const newShape = {
-            id: Date.now(),
-            x: x - 10,
-            y: y - 10,
-            width: 20,
-            height: 20,
-            type: 'checkbox'
-        }
-        if (!shapes.value[pageNum.value]) shapes.value[pageNum.value] = []
-        shapes.value[pageNum.value].push(newShape)
-        pushToHistory()
-    } else if (item.name === 'radio') {
-        const newShape = {
-            id: Date.now(),
-            x: x - 10,
-            y: y - 10,
-            width: 20,
-            height: 20,
-            type: 'radio'
-        }
-        if (!shapes.value[pageNum.value]) shapes.value[pageNum.value] = []
-        shapes.value[pageNum.value].push(newShape)
-        pushToHistory()
-    } else {
-        // Default text for others
-        const newText = {
-            id: Date.now(),
-            x: x,
-            y: y,
-            text: item.label,
-            fontSize: 16,
-            color: '#000000',
-            fontFamily: 'Helvetica',
-            isBold: false,
-            isItalic: false,
-            isFormField: true
-        }
-        if (!texts.value[pageNum.value]) texts.value[pageNum.value] = []
-        texts.value[pageNum.value].push(newText)
-        editingTextId.value = newText.id
-    }
-}
+    if (!formFields.value[pageNum.value]) formFields.value[pageNum.value] = []
 
-const addFormElement = (item) => {
-    // Logic for adding form element on click (e.g. center of screen or next available position)
-    // For now, we can just start drag or place at center.
-    // Let's place at center of current viewport.
-    const viewport = viewportSize.value
-    const x = (viewport.width / 2) - 50
-    const y = (viewport.height / 2) - 15
-    addFormElementAt(item, Math.max(0, x), Math.max(0, y))
+    const isCheckable = item.name === 'checkbox' || item.name === 'radio'
+    // Auto-generate a unique db field name like "text_1", "email_2"
+    const existingOfType = (formFields.value[pageNum.value] || []).filter(f => f.type === item.name).length
+    const newField = {
+        id: Date.now(),
+        type: item.name,
+        label: item.label,
+        dbFieldName: item.name + '_' + (existingOfType + 1),
+        helperText: '',
+        required: false,
+        readOnly: false,
+        conditional: false,
+        conditionField: '',
+        conditionOp: 'equals',
+        conditionValue: '',
+        x: x,
+        y: y,
+        width: isCheckable ? 160 : 200,
+    }
+    formFields.value[pageNum.value].push(newField)
+    selectedFieldId.value = newField.id
+    showChangeTypeMenu.value = false
+    showAdvanced.value = false
+    pushToHistory()
 }
 
 const openTableDialog = () => {
@@ -1077,6 +1322,14 @@ const highlights = ref({}) // Store highlights per page: { pageNum: [{ id, x, y,
 const strikeouts = ref({}) // Store strikeouts per page: { pageNum: [{ id, x, y, width, height }] }
 const underlines = ref({}) // Store underlines per page: { pageNum: [{ id, x, y, width, height }] }
 const shapes = ref({}) // Store shapes per page: { pageNum: [{ id, x, y, type }] }
+const formFields = ref({}) // Store form fields per page: { pageNum: [{ id, type, label, dbFieldName, helperText, required, readOnly, conditional, x, y, width }] }
+const selectedFieldId = ref(null)
+const draggingFieldId = ref(null)
+const resizingFieldId = ref(null)
+const initialFieldState = ref(null)
+const showChangeTypeMenu = ref(false)
+const showAdvanced = ref(false)
+const isSavingForm = ref(false)
 const viewportSize = ref({ width: 0, height: 0 })
 const editingTextId = ref(null)
 const draggingTextId = ref(null)
@@ -1221,7 +1474,8 @@ const pushToHistory = () => {
         highlights: JSON.parse(JSON.stringify(highlights.value)),
         strikeouts: JSON.parse(JSON.stringify(strikeouts.value)),
         underlines: JSON.parse(JSON.stringify(underlines.value)),
-        watermark: watermark.value ? JSON.parse(JSON.stringify(watermark.value)) : null
+        watermark: watermark.value ? JSON.parse(JSON.stringify(watermark.value)) : null,
+        formFields: JSON.parse(JSON.stringify(formFields.value))
     }
 
     // Remove future history if we pushed a new action while in the middle of history
@@ -1280,6 +1534,7 @@ const restoreState = (state) => {
     strikeouts.value = JSON.parse(JSON.stringify(state.strikeouts || {})) // Handle old history without strikeouts
     underlines.value = JSON.parse(JSON.stringify(state.underlines || {})) // Handle old history without underlines
     watermark.value = state.watermark ? JSON.parse(JSON.stringify(state.watermark)) : null
+    formFields.value = JSON.parse(JSON.stringify(state.formFields || {}))
 }
 
 onUnmounted(() => {
@@ -1468,12 +1723,26 @@ const handleCanvasMouseDown = (e) => {
 }
 
 const handleCanvasClick = (e) => {
-  if (tool.value === 'whiteout' || tool.value === 'redact' || tool.value === 'highlight' || tool.value === 'strikeout' || tool.value === 'underline') return // Handled by mousedown/up
-  if (draggingTextId.value || editingTextId.value || draggingShapeId.value || resizingShapeId.value || draggingSignatureId.value || resizingSignatureId.value || draggingImageId.value || resizingImageId.value || draggingTableId.value || resizingTableId.value) return
+  if (tool.value === 'whiteout' || tool.value === 'redact' || tool.value === 'highlight' || tool.value === 'strikeout' || tool.value === 'underline') return
 
   const rect = canvasWrapper.value.getBoundingClientRect()
   const x = e.clientX - rect.left
   const y = e.clientY - rect.top
+
+  // Click-to-place form element — must run before any other guard
+  if (pendingFormElement.value) {
+      // Finish any active text editing first without blocking placement
+      if (editingTextId.value) {
+          const activeText = (texts.value[pageNum.value] || []).find(t => t.id === editingTextId.value)
+          if (activeText) finishEditing(activeText)
+          else editingTextId.value = null
+      }
+      addFormElementAt(pendingFormElement.value, x, y)
+      pendingFormElement.value = null
+      return
+  }
+
+  if (draggingTextId.value || editingTextId.value || draggingShapeId.value || resizingShapeId.value || draggingSignatureId.value || resizingSignatureId.value || draggingImageId.value || resizingImageId.value || draggingTableId.value || resizingTableId.value) return
 
   if (tool.value === 'draw') {
       // Handle selection deselect if clicked empty space
@@ -1495,7 +1764,17 @@ const handleCanvasClick = (e) => {
       }
   }
 
-  if (tool.value !== 'text' && tool.value !== 'shape' && tool.value !== 'sign' && tool.value !== 'draw' && tool.value !== 'table') return
+  if (tool.value !== 'text' && tool.value !== 'shape' && tool.value !== 'sign' && tool.value !== 'draw' && tool.value !== 'table' && !isEditPdfMode.value) {
+      // In form mode, clicking empty space deselects everything
+      if (isFormMode.value) {
+          selectedShapeId.value = null
+          selectedSignatureId.value = null
+          selectedTableId.value = null
+          selectedImageId.value = null
+          selectedFieldId.value = null
+      }
+      return
+  }
   
   if (tool.value === 'sign') {
       // If we are in sign tool, clicking should deselect any selected signature unless we clicked on one
@@ -1819,7 +2098,19 @@ const handleWindowMouseMove = (e) => {
    if (drawType.value === 'pencil') {
        pencilPoints.value.push({ x: currentX, y: currentY })
    }
-} else if (isDrawingWhiteout.value) {
+  } else if (draggingFieldId.value) {
+      const rect = canvasWrapper.value.getBoundingClientRect()
+      const field = (formFields.value[pageNum.value] || []).find(f => f.id === draggingFieldId.value)
+      if (field) {
+          field.x = Math.max(0, e.clientX - rect.left - dragOffset.value.x)
+          field.y = Math.max(0, e.clientY - rect.top - dragOffset.value.y)
+      }
+  } else if (resizingFieldId.value) {
+      const field = (formFields.value[pageNum.value] || []).find(f => f.id === resizingFieldId.value)
+      if (field && initialFieldState.value) {
+          field.width = Math.max(80, initialFieldState.value.width + (e.clientX - startMousePos.value.x))
+      }
+  } else if (isDrawingWhiteout.value) {
      const rect = canvasWrapper.value.getBoundingClientRect()
      const currentX = e.clientX - rect.left
      const currentY = e.clientY - rect.top
@@ -1990,7 +2281,7 @@ const handleWindowMouseUp = () => {
           pushToHistory()
       }
       currentUnderline.value = { x: 0, y: 0, width: 0, height: 0 }
-  } else if (draggingTextId.value || draggingShapeId.value || resizingShapeId.value || draggingSignatureId.value || resizingSignatureId.value || draggingImageId.value || resizingImageId.value) {
+  } else if (draggingTextId.value || draggingShapeId.value || resizingShapeId.value || draggingSignatureId.value || resizingSignatureId.value || draggingImageId.value || resizingImageId.value || draggingTableId.value || resizingTableId.value) {
       // End of drag/resize
       pushToHistory()
       
@@ -2009,14 +2300,19 @@ const handleWindowMouseUp = () => {
       } else if (draggingImageId.value) {
         draggingImageId.value = null
       } else if (resizingImageId.value) {
-      resizingImageId.value = null
-      initialImageState.value = null
-  } else if (draggingTableId.value) {
-      draggingTableId.value = null
-  } else if (resizingTableId.value) {
-      resizingTableId.value = null
-      initialTableState.value = null
-  }
+        resizingImageId.value = null
+        initialImageState.value = null
+      } else if (draggingTableId.value) {
+        draggingTableId.value = null
+      } else if (resizingTableId.value) {
+        resizingTableId.value = null
+        initialTableState.value = null
+      } else if (draggingFieldId.value) {
+        draggingFieldId.value = null
+      } else if (resizingFieldId.value) {
+        resizingFieldId.value = null
+        initialFieldState.value = null
+      }
   }
   
   window.removeEventListener('mousemove', handleWindowMouseMove)
@@ -2131,7 +2427,7 @@ const saveSignatureFromModal = () => {
 }
 
 const startDragSignature = (e, sig) => {
-    if (tool.value !== 'sign') return
+    if (!isFormMode.value && tool.value !== 'sign') return
     
     selectedSignatureId.value = sig.id
     draggingSignatureId.value = sig.id
@@ -2287,6 +2583,42 @@ const deleteShape = (shape) => {
       shapes.value[pageNum.value].splice(idx, 1)
       pushToHistory()
   }
+}
+
+// Form field interactions
+const selectField = (field) => {
+    selectedFieldId.value = field.id
+}
+
+const deleteField = (field) => {
+    const list = formFields.value[pageNum.value]
+    const idx = list.indexOf(field)
+    if (idx > -1) {
+        list.splice(idx, 1)
+        selectedFieldId.value = null
+        pushToHistory()
+    }
+}
+
+const startDragField = (field, e) => {
+    if (!isFormMode.value) return
+    selectedFieldId.value = field.id
+    draggingFieldId.value = field.id
+    const rect = canvasWrapper.value.getBoundingClientRect()
+    dragOffset.value = {
+        x: e.clientX - rect.left - field.x,
+        y: e.clientY - rect.top - field.y,
+    }
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+}
+
+const startResizeField = (field, e) => {
+    resizingFieldId.value = field.id
+    initialFieldState.value = { ...field }
+    startMousePos.value = { x: e.clientX, y: e.clientY }
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
 }
 
 const toggleBold = (text) => {
@@ -3038,6 +3370,10 @@ const downloadBlob = (data, fileName, mimeType) => {
     border: 1px dashed #2196F3;
   }
 
+  .signature-element.is-selected {
+    border: 1px dashed #2196F3;
+  }
+
   .signature-controls {
     position: absolute;
     top: 0;
@@ -3461,4 +3797,170 @@ const downloadBlob = (data, fileName, mimeType) => {
     background-color: #FFF3E0 !important; /* orange-lighten-5 darken slightly */
     border-color: #FFB74D !important;
   }
+
+  /* ── Form Fields Layer ── */
+  .form-fields-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 36;
+    pointer-events: none;
+  }
+  .form-field-element {
+    position: absolute;
+    pointer-events: auto;
+    cursor: move;
+    user-select: none;
+  }
+  .form-field-box {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 28px;
+    border: 1.5px solid #2e7d32;
+    border-radius: 3px;
+    background: rgba(232, 245, 233, 0.55);
+    padding: 0 6px;
+    box-sizing: border-box;
+  }
+  .form-field-signature {
+    min-height: 44px;
+    border-style: dashed;
+    justify-content: center;
+  }
+  .form-field-checkbox-row {
+    border: none;
+    background: transparent;
+    padding: 0;
+    gap: 6px;
+  }
+  .form-field-checkbox-box {
+    width: 14px; height: 14px;
+    border: 1.5px solid #2e7d32;
+    border-radius: 2px;
+    flex-shrink: 0;
+    background: white;
+  }
+  .form-field-radio-box {
+    width: 14px; height: 14px;
+    border: 1.5px solid #2e7d32;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: white;
+  }
+  .form-field-db-name {
+    font-size: 11px;
+    color: #1b5e20;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .form-field-element.is-selected .form-field-box {
+    border-color: #1565C0;
+    background: rgba(227, 242, 253, 0.6);
+    box-shadow: 0 0 0 2px rgba(21, 101, 192, 0.3);
+  }
+  .form-field-element.is-selected .form-field-db-name {
+    color: #0d47a1;
+  }
+  .form-field-top-controls {
+    position: absolute;
+    top: -26px;
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: white;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    padding: 2px 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    z-index: 10;
+  }
+  .ffc-btn { cursor: pointer; }
+  .form-field-resize {
+    position: absolute;
+    bottom: -4px; right: -4px;
+    width: 10px; height: 10px;
+    background: #1565C0;
+    border: 1px solid white;
+    border-radius: 2px;
+    cursor: ew-resize;
+    pointer-events: auto;
+  }
+
+  /* ── Field Properties Panel ── */
+  .field-props-panel {
+    position: fixed;
+    top: 64px;
+    right: 0;
+    width: 260px;
+    height: calc(100vh - 64px);
+    background: white;
+    border-left: 1px solid #E0E0E0;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .field-props-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid #F0F0F0;
+    flex-shrink: 0;
+  }
+  .field-props-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+  }
+  .field-props-section {
+    margin-bottom: 18px;
+  }
+  .field-props-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #424242;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+  }
+  .field-props-input { font-size: 12px; }
+  .field-props-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .field-props-toggle-label {
+    font-size: 12px;
+    color: #424242;
+  }
+  .field-props-advanced {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 6px 0;
+    border-top: 1px solid #F0F0F0;
+  }
+  .field-type-menu {
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .field-type-option {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #424242;
+  }
+  .field-type-option:hover { background: #F5F5F5; }
+  .field-type-option.active { background: #E3F2FD; color: #1565C0; font-weight: 600; }
 </style>
