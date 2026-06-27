@@ -4,11 +4,11 @@
     style="min-height: 100vh"
   >
     <!-- Hero Text Section (Original) -->
-    <div class="text-center mb-10 mt-10">
-      <h1 class="text-h3 text-md-h2 font-weight-black mb-4">
+    <div class="text-center mb-mb-10 mb-5 mt-md-10 mt-2">
+      <h1 class="text-h6 text-md-h2 font-weight-black mb-4">
         Your reliable solution for all PDF needs.
       </h1>
-      <p class="text-h6 text-grey-darken-1">
+      <p class="text-h8 text-grey-darken-1">
         One solution to edit, collaborate, and eSign your documents.
       </p>
     </div>
@@ -18,7 +18,7 @@
       v-if="!selectedFile"
       flat
       border
-      class="upload-area w-100 d-flex flex-column align-center justify-center py-10 px-4 mb-10"
+      class="upload-area w-100 d-flex flex-column align-center justify-center py-4 px-4 mb-md-10"
       max-width="100%"
       @click="triggerFileInput"
       @drop.prevent="handleDrop"
@@ -29,17 +29,17 @@
         icon="mdi-file-upload-outline"
         size="64"
         color="grey-darken-1"
-        class="mb-4"
+        class="mb-1"
       ></v-icon>
 
-      <div class="text-h6 mb-6 font-weight-medium">
-        Drop document here to upload
+      <div class="text-h6 mb-4 font-weight-medium">
+        Drop/Select document here to upload
       </div>
 
       <v-btn
         color="orange-darken-1"
         size="large"
-        class="text-white text-capitalize px-8 mb-8 font-weight-bold"
+        class="text-white text-capitalize px-8 mb-5 font-weight-bold hidden-sm-and-down"
         rounded="sm"
         elevation="0"
         @click.stop="triggerFileInput"
@@ -574,7 +574,7 @@
     </div>
 
     <!-- Informational Content Section -->
-    <v-container class="py-16" style="max-width: 1000px">
+    <v-container class="py--md-16 py-5" style="max-width: 1000px">
       <!-- What is PDF Editor -->
       <div class="mb-12">
         <h2 class="text-h4 font-weight-bold mb-6 text-grey-darken-3">
