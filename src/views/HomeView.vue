@@ -111,7 +111,7 @@
 
       <v-row>
         <!-- Sign & Edit -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
@@ -134,7 +134,7 @@
         </v-col>
 
         <!-- Convert to Word -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
@@ -161,7 +161,7 @@
         </v-col>
 
         <!-- Compress -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
@@ -186,7 +186,7 @@
         </v-col>
 
         <!-- Watermark -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
@@ -208,7 +208,7 @@
           </v-hover>
         </v-col>
         <!-- Merge PDF -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
@@ -231,7 +231,7 @@
         </v-col>
 
         <!-- PDF to PNG -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
@@ -258,7 +258,7 @@
         </v-col>
 
         <!-- PNG to PDF -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
@@ -285,7 +285,7 @@
         </v-col>
 
         <!-- PDF to JPG -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
@@ -312,7 +312,7 @@
         </v-col>
 
         <!-- JPG to PDF -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
@@ -339,7 +339,7 @@
         </v-col>
 
         <!-- Protect PDF -->
-        <v-col cols="12" md="3">
+        <v-col cols="6" md="3">
           <v-hover v-slot="{ isHovering, props }">
             <v-card
               v-bind="props"
